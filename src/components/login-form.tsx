@@ -3,10 +3,8 @@ import { Button } from "src/components/ui/button"
 import { Card, CardContent } from "src/components/ui/card"
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "src/components/ui/field"
 import { Input } from "src/components/ui/input"
 
@@ -16,14 +14,14 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   return (
     <div className={cn("flex flex-col gap-6 w-full", className)} {...props}>
-      <Card className="overflow-hidden flex justify-center h-full p-0 min-h-[30rem]">
+      <Card className="overflow-hidden flex justify-center shadow-xl h-full p-0 min-h-[30rem]">
         <CardContent className="flex-1 grid h-full p-0 md:grid-cols-2">
           <form className="p-6 h-full md:p-8 md:py-0 py-12 flex items-center justify-center">
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-balance text-muted-foreground">
-                  Login to your Acme Inc account
+                 Hi, there! Balázs login to your Life Stack OS.
                 </p>
               </div>
               <Field>
@@ -57,9 +55,9 @@ export function LoginForm({
           </form>
           <div className="relative hidden bg-muted md:block h-full">
             <img
-              src="/placeholder.svg"
+              src="/images/life-stack-os-login.jpg"
               alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              className="absolute inset-0 h-full w-full object-cover object-top dark:brightness-[0.2] dark:grayscale"
             />
           </div>
         </CardContent>
