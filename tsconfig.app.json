@@ -4,6 +4,11 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*" : ["./src/*"],
+      "src/*": ["./src/*"]
+    },
     "types": ["vite/client"],
     "skipLibCheck": true,
 
