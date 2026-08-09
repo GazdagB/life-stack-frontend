@@ -1,5 +1,7 @@
-import { Routes, Route } from 'react-router'
+import { Navigate, Routes, Route } from 'react-router'
 import './App.css'
+import { ProtectedRoute, PublicOnlyRoute } from './components/auth-route'
+import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 
 function App() {
@@ -8,9 +10,14 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<h1 className="text-3xl font-bold">Home</h1>} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/about" element={<h1>About</h1>} />
-        <Route path="/login" element={<Login />} />
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={<Login />} />
+        </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Routes>
     </>
   )
