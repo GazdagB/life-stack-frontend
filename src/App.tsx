@@ -1,8 +1,11 @@
 import { Navigate, Routes, Route } from 'react-router'
 import './App.css'
+import { ApplicationShell1 } from './components/application-shell1'
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth-route'
 import Dashboard from './pages/Dashboard'
+import Expenses from './pages/Expenses'
 import Login from './pages/Login'
+import Todos from './pages/Todos'
 
 function App() {
 
@@ -11,13 +14,20 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/about" element={<h1>About</h1>} />
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<Login />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route element={<ApplicationShell1 className="min-h-svh" />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/todos" element={<Todos />} />
+            <Route path="/todos/today" element={<Todos />} />
+            <Route path="/todos/completed" element={<Todos />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/expenses/overview" element={<Expenses />} />
+          </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </>
   )
