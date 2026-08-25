@@ -1,10 +1,13 @@
 import {
   CarFront,
   Clapperboard,
+  CreditCard,
   HeartPulse,
   House,
   Repeat2,
+  Scale,
   Shapes,
+  ShieldCheck,
   ShoppingBag,
   ShoppingBasket,
   Utensils,
@@ -22,8 +25,11 @@ export const expenseCategoryOptions = [
   { id: 8, name: "Entertainment", icon: Clapperboard, color: "bg-fuchsia-100 text-fuchsia-700", border: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800", bar: "bg-fuchsia-500" },
   { id: 9, name: "Shopping", icon: ShoppingBag, color: "bg-pink-100 text-pink-700", border: "border-pink-300 bg-pink-50 text-pink-800", bar: "bg-pink-500" },
   { id: 10, name: "Other", icon: Shapes, color: "bg-slate-100 text-slate-700", border: "border-slate-300 bg-slate-50 text-slate-800", bar: "bg-slate-500" },
+  { id: 11, name: "Installment Payments", icon: CreditCard, color: "bg-indigo-100 text-indigo-700", border: "border-indigo-300 bg-indigo-50 text-indigo-800", bar: "bg-indigo-500" },
+  { id: 12, name: "Insurance", icon: ShieldCheck, color: "bg-teal-100 text-teal-700", border: "border-teal-300 bg-teal-50 text-teal-800", bar: "bg-teal-500" },
+  { id: 13, name: "Legal & Tax", icon: Scale, color: "bg-stone-200 text-stone-700", border: "border-stone-400 bg-stone-100 text-stone-800", bar: "bg-stone-500" },
 ] as const
 
 export function getExpenseCategory(id: number) {
-  return expenseCategoryOptions.find((category) => category.id === id) ?? expenseCategoryOptions.at(-1)!
+  return expenseCategoryOptions.find((category) => category.id === id) ?? expenseCategoryOptions.find((category) => category.id === 10)!
 }

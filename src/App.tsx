@@ -5,6 +5,7 @@ import { ProtectedRoute, PublicOnlyRoute } from './components/auth-route'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Login from './pages/Login'
+import RecurringExpenses from './pages/RecurringExpenses'
 import Todos from './pages/Todos'
 
 function App() {
@@ -24,6 +25,8 @@ function App() {
             <Route path="/todos/today" element={<Todos />} />
             <Route path="/todos/completed" element={<Todos />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path="/expenses/recurring" element={<RecurringExpenses />} />
+            <Route path="/expenses/coverage" element={<RecurringExpenses />} />
             <Route path="/expenses/overview" element={<Expenses />} />
           </Route>
         </Route>

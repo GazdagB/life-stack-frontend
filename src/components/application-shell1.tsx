@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   CheckCircle2,
+  Calculator,
   ChevronRight,
   ChevronsUpDown,
   CircleDollarSign,
@@ -8,6 +9,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LogOut,
+  Repeat2,
   Settings,
   Sparkles,
   TrendingUp,
@@ -95,6 +97,8 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
         icon: CircleDollarSign,
         children: [
           { label: "All expenses", href: "/expenses", icon: CircleDollarSign },
+          { label: "Recurring", href: "/expenses/recurring", icon: Repeat2 },
+          { label: "Coverage plan", href: "/expenses/coverage", icon: Calculator },
           { label: "Spending overview", href: "/expenses/overview", icon: TrendingUp },
         ],
       },
@@ -108,6 +112,8 @@ const pageNames: Record<string, [string, string]> = {
   "/todos/today": ["Tasks", "Today"],
   "/todos/completed": ["Tasks", "Completed"],
   "/expenses": ["Expenses", "All expenses"],
+  "/expenses/recurring": ["Expenses", "Recurring"],
+  "/expenses/coverage": ["Expenses", "Coverage plan"],
   "/expenses/overview": ["Expenses", "Spending overview"],
 }
 
