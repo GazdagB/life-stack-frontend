@@ -1,15 +1,20 @@
 import * as React from "react"
 import {
+  Ban,
+  BellRing,
   CalendarClock,
   CalendarDays,
   Calculator,
   LoaderCircle,
+  LockKeyhole,
   Pause,
   Pencil,
   Play,
   Plus,
   RefreshCw,
+  ShieldAlert,
   Trash2,
+  Unlock,
   X,
 } from "lucide-react"
 import { useLocation } from "react-router"
@@ -20,6 +25,7 @@ import { Badge } from "src/components/ui/badge"
 import { Button } from "src/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
 import { Input } from "src/components/ui/input"
+import { Textarea } from "src/components/ui/textarea"
 import {
   Sheet,
   SheetContent,
@@ -29,6 +35,7 @@ import {
 } from "src/components/ui/sheet"
 import {
   api,
+  type CancellationDifficulty,
   type RecurringCommitmentForecast,
   type RecurringCoverage,
   type RecurringExpense,
@@ -52,6 +59,25 @@ const frequencyLabels: Record<RecurringFrequency, string> = {
   YEARLY: "Yearly",
 }
 
+const cancellationOptions: Array<{
+  value: CancellationDifficulty
+  label: string
+  description: string
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  color: string
+  border: string
+}> = [
+  { value: "EASY", label: "Easy to cancel", description: "Can be stopped whenever you choose.", icon: Unlock, color: "bg-emerald-100 text-emerald-700", border: "border-emerald-300 bg-emerald-50 text-emerald-800" },
+  { value: "NOTICE_REQUIRED", label: "Notice required", description: "Needs advance notice or a cancellation window.", icon: BellRing, color: "bg-amber-100 text-amber-700", border: "border-amber-300 bg-amber-50 text-amber-800" },
+  { value: "CONTRACT_LOCKED", label: "Contract locked", description: "Cannot be cancelled before the minimum term ends.", icon: LockKeyhole, color: "bg-orange-100 text-orange-700", border: "border-orange-300 bg-orange-50 text-orange-800" },
+  { value: "NON_CANCELLABLE", label: "Cannot be cancelled", description: "A fixed obligation that must be paid or completed.", icon: Ban, color: "bg-red-100 text-red-700", border: "border-red-300 bg-red-50 text-red-800" },
+  { value: "ESSENTIAL", label: "Essential", description: "Technically cancellable, but not realistic for your life.", icon: ShieldAlert, color: "bg-rose-100 text-rose-700", border: "border-rose-300 bg-rose-50 text-rose-800" },
+]
+
+function getCancellationOption(value: CancellationDifficulty) {
+  return cancellationOptions.find((option) => option.value === value) ?? cancellationOptions[0]
+}
+
 function emptyRecurringExpense(): RecurringExpenseInput {
   return {
     title: "",
@@ -60,6 +86,9 @@ function emptyRecurringExpense(): RecurringExpenseInput {
     frequency: "MONTHLY",
     start_date: new Date().toISOString().slice(0, 10),
     end_date: null,
+    cancellation_difficulty: "EASY",
+    cancellable_from: null,
+    cancellation_notes: null,
     active: true,
   }
 }
@@ -191,11 +220,12 @@ export default function RecurringExpenses() {
               </div>
               {coveredExpenses.map((expense) => {
                 const forecast = forecastByExpenseId.get(expense.id)!
+                const cancellation = getCancellationOption(expense.cancellation_difficulty)
                 return (
                   <button type="button" key={expense.id} onClick={() => setSelectedExpense(expense)} className="grid w-full grid-cols-[minmax(220px,1fr)_120px_120px_130px_130px] items-center gap-4 border-b px-4 py-4 text-left transition-colors last:border-0 hover:bg-muted/50">
                     <div className="flex min-w-0 items-center gap-3">
                       <VendorIcon vendorName={expense.title} categoryId={expense.category_id} className="size-9 rounded-lg" />
-                      <div className="min-w-0"><p className="truncate font-medium">{expense.title}</p><p className="text-xs text-muted-foreground">{money.format(Number(expense.amount))} {frequencyLabels[expense.frequency].toLowerCase()}</p></div>
+                      <div className="min-w-0"><div className="flex min-w-0 items-center gap-2"><p className="truncate font-medium">{expense.title}</p><Badge variant="outline" className={cn("shrink-0", cancellation.border)}>{cancellation.label}</Badge></div><p className="text-xs text-muted-foreground">{money.format(Number(expense.amount))} {frequencyLabels[expense.frequency].toLowerCase()}</p></div>
                     </div>
                     <span className="text-right tabular-nums">{money.format(Number(forecast.daily_reserve))}</span>
                     <span className="text-right tabular-nums">{money.format(Number(forecast.monthly_reserve))}</span>
@@ -232,7 +262,10 @@ export default function RecurringExpenses() {
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="recurring-amount">Amount</label><Input id="recurring-amount" type="number" min="0.01" step="0.01" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: event.target.value })} placeholder="0.00" required /></div>
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="recurring-start">Starts</label><Input id="recurring-start" type="date" value={draft.start_date} onChange={(event) => setDraft({ ...draft, start_date: event.target.value })} required /></div>
               <fieldset className="space-y-2 sm:col-span-2 lg:col-span-4"><legend className="text-sm font-medium">Frequency</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(frequencyLabels) as RecurringFrequency[]).map((frequency) => <button key={frequency} type="button" onClick={() => setDraft({ ...draft, frequency })} aria-pressed={draft.frequency === frequency} className={cn("rounded-xl border px-3 py-3 text-sm font-medium transition-colors", draft.frequency === frequency ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted")}>{frequencyLabels[frequency]}</button>)}</div></fieldset>
-              <div className="space-y-2 sm:col-span-2"><label className="text-sm font-medium" htmlFor="recurring-end">Ends (optional)</label><Input id="recurring-end" type="date" min={draft.start_date} value={draft.end_date ?? ""} onChange={(event) => setDraft({ ...draft, end_date: event.target.value || null })} /></div>
+              <div className="space-y-2 sm:col-span-2"><label className="text-sm font-medium" htmlFor="recurring-end">Payments end (optional)</label><Input id="recurring-end" type="date" min={draft.start_date} value={draft.end_date ?? ""} onChange={(event) => setDraft({ ...draft, end_date: event.target.value || null })} /><p className="text-xs text-muted-foreground">Use only when this expense itself will stop.</p></div>
+              <fieldset className="space-y-2 sm:col-span-2 lg:col-span-4"><legend className="text-sm font-medium">Cancellation difficulty</legend><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">{cancellationOptions.map((option) => { const OptionIcon = option.icon; const isSelected = draft.cancellation_difficulty === option.value; const supportsDate = option.value === "NOTICE_REQUIRED" || option.value === "CONTRACT_LOCKED"; return <button key={option.value} type="button" onClick={() => setDraft({ ...draft, cancellation_difficulty: option.value, cancellable_from: supportsDate ? draft.cancellable_from : null })} aria-pressed={isSelected} className={cn("rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm", isSelected ? option.border : "bg-background")}><span className="flex items-center gap-2 text-sm font-medium"><span className={cn("flex size-8 items-center justify-center rounded-lg", option.color)}><OptionIcon className="size-4" /></span>{option.label}</span><span className="mt-2 block text-xs text-muted-foreground">{option.description}</span></button> })}</div></fieldset>
+              {(draft.cancellation_difficulty === "NOTICE_REQUIRED" || draft.cancellation_difficulty === "CONTRACT_LOCKED") && <div className="space-y-2 sm:col-span-2"><label className="text-sm font-medium" htmlFor="recurring-cancellable-from">Earliest cancellation date</label><Input id="recurring-cancellable-from" type="date" min={draft.start_date} value={draft.cancellable_from ?? ""} onChange={(event) => setDraft({ ...draft, cancellable_from: event.target.value || null })} /><p className="text-xs text-muted-foreground">This does not stop the recurring payments automatically.</p></div>}
+              <div className="space-y-2 sm:col-span-2 lg:col-span-4"><div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="recurring-cancellation-notes">Cancellation notes (optional)</label><span className="text-xs text-muted-foreground">{draft.cancellation_notes?.length ?? 0}/280</span></div><Textarea id="recurring-cancellation-notes" value={draft.cancellation_notes ?? ""} maxLength={280} onChange={(event) => setDraft({ ...draft, cancellation_notes: event.target.value || null })} placeholder="Notice period, cancellation window, why this cost is essential…" /></div>
               <fieldset className="space-y-2 sm:col-span-2 lg:col-span-4"><legend className="text-sm font-medium">Category</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{expenseCategoryOptions.map((category) => { const CategoryIcon = category.icon; const isSelected = draft.category_id === category.id; return <button key={category.id} type="button" onClick={() => setDraft({ ...draft, category_id: category.id })} aria-pressed={isSelected} className={cn("flex min-h-16 items-center gap-2 rounded-xl border p-2.5 text-left text-sm font-medium transition-all hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", isSelected ? category.border : "border-border bg-background text-muted-foreground hover:text-foreground")}><span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", category.color)}><CategoryIcon className="size-4" /></span><span className="leading-tight">{category.name}</span></button> })}</div></fieldset>
               <div className="sm:col-span-2 lg:col-span-4"><Button type="submit" disabled={isSaving}>{isSaving && <LoaderCircle className="animate-spin" />}Save commitment</Button></div>
             </form>
@@ -245,6 +278,7 @@ export default function RecurringExpenses() {
       <div className="grid gap-4 lg:grid-cols-2">
         {expenses.map((expense) => {
           const category = getExpenseCategory(expense.category_id)
+          const cancellation = getCancellationOption(expense.cancellation_difficulty)
           const hasEnded = Boolean(expense.end_date && expense.end_date < today)
           const isUpcoming = expense.start_date > today
           return (
@@ -259,7 +293,7 @@ export default function RecurringExpenses() {
               <CardContent className="flex items-start gap-3">
                 <VendorIcon vendorName={expense.title} categoryId={expense.category_id} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2"><p className="font-medium">{expense.title}</p><Badge variant="outline" className={category.border}>{category.name}</Badge>{!expense.active && <Badge variant="secondary">Paused</Badge>}{hasEnded && <Badge variant="secondary">Ended</Badge>}{isUpcoming && <Badge variant="secondary">Upcoming</Badge>}</div>
+                  <div className="flex flex-wrap items-center gap-2"><p className="font-medium">{expense.title}</p><Badge variant="outline" className={category.border}>{category.name}</Badge><Badge variant="outline" className={cancellation.border}>{cancellation.label}</Badge>{!expense.active && <Badge variant="secondary">Paused</Badge>}{hasEnded && <Badge variant="secondary">Ended</Badge>}{isUpcoming && <Badge variant="secondary">Upcoming</Badge>}</div>
                   <p className="mt-1 text-xl font-semibold">{money.format(Number(expense.amount))}<span className="ml-1 text-sm font-normal text-muted-foreground">/ {frequencyLabels[expense.frequency].toLowerCase()}</span></p>
                   <p className="mt-2 text-xs text-muted-foreground">From {expense.start_date}{expense.end_date ? ` until ${expense.end_date}` : " · No end date"}</p>
                 </div>
@@ -299,6 +333,8 @@ function CommitmentSheet({
   const [editError, setEditError] = React.useState("")
   const [editDraft, setEditDraft] = React.useState<RecurringExpenseInput>({ ...expense })
   const category = getExpenseCategory(expense.category_id)
+  const cancellation = getCancellationOption(expense.cancellation_difficulty)
+  const CancellationIcon = cancellation.icon
 
   async function saveChanges(event: React.FormEvent) {
     event.preventDefault()
@@ -342,14 +378,23 @@ function CommitmentSheet({
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-amount">Amount</label><Input id="edit-recurring-amount" type="number" min="0.01" step="0.01" value={editDraft.amount} onChange={(event) => setEditDraft({ ...editDraft, amount: event.target.value })} required /></div>
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-frequency">Frequency</label><select id="edit-recurring-frequency" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.frequency} onChange={(event) => setEditDraft({ ...editDraft, frequency: event.target.value as RecurringFrequency })}>{(Object.keys(frequencyLabels) as RecurringFrequency[]).map((frequency) => <option key={frequency} value={frequency}>{frequencyLabels[frequency]}</option>)}</select></div>
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-start">Starts</label><Input id="edit-recurring-start" type="date" value={editDraft.start_date} onChange={(event) => setEditDraft({ ...editDraft, start_date: event.target.value })} required /></div>
-              <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-end">Ends</label><Input id="edit-recurring-end" type="date" min={editDraft.start_date} value={editDraft.end_date ?? ""} onChange={(event) => setEditDraft({ ...editDraft, end_date: event.target.value || null })} /></div>
+              <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-end">Payments end</label><Input id="edit-recurring-end" type="date" min={editDraft.start_date} value={editDraft.end_date ?? ""} onChange={(event) => setEditDraft({ ...editDraft, end_date: event.target.value || null })} /></div>
             </div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-cancellation-difficulty">Cancellation difficulty</label><select id="edit-cancellation-difficulty" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.cancellation_difficulty} onChange={(event) => { const value = event.target.value as CancellationDifficulty; const supportsDate = value === "NOTICE_REQUIRED" || value === "CONTRACT_LOCKED"; setEditDraft({ ...editDraft, cancellation_difficulty: value, cancellable_from: supportsDate ? editDraft.cancellable_from : null }) }}>{cancellationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
+            {(editDraft.cancellation_difficulty === "NOTICE_REQUIRED" || editDraft.cancellation_difficulty === "CONTRACT_LOCKED") && <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-cancellable-from">Earliest cancellation date</label><Input id="edit-cancellable-from" type="date" min={editDraft.start_date} value={editDraft.cancellable_from ?? ""} onChange={(event) => setEditDraft({ ...editDraft, cancellable_from: event.target.value || null })} /><p className="text-xs text-muted-foreground">The commitment stays ongoing after this date unless you end or pause it.</p></div>}
+            <div className="space-y-2"><div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="edit-cancellation-notes">Cancellation notes</label><span className="text-xs text-muted-foreground">{editDraft.cancellation_notes?.length ?? 0}/280</span></div><Textarea id="edit-cancellation-notes" value={editDraft.cancellation_notes ?? ""} maxLength={280} onChange={(event) => setEditDraft({ ...editDraft, cancellation_notes: event.target.value || null })} placeholder="Notice period, contract terms, or why it is essential…" /></div>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-category">Category</label><select id="edit-recurring-category" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.category_id} onChange={(event) => setEditDraft({ ...editDraft, category_id: Number(event.target.value) })}>{expenseCategoryOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></div>
             <button type="button" onClick={() => setEditDraft({ ...editDraft, active: !editDraft.active })} className={cn("flex w-full items-center justify-between rounded-xl border p-3 text-left", editDraft.active ? "border-emerald-300 bg-emerald-50" : "bg-muted/40")}><span><span className="block text-sm font-medium">Active commitment</span><span className="text-xs text-muted-foreground">Include this schedule in coverage forecasts.</span></span><Badge variant={editDraft.active ? "default" : "secondary"}>{editDraft.active ? "Active" : "Paused"}</Badge></button>
             <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button><Button type="submit" disabled={isSaving}>{isSaving && <LoaderCircle className="animate-spin" />}Save changes</Button></div>
           </form>
         ) : (
           <div className="space-y-6 px-4 pb-6">
+            <div className={cn("rounded-xl border p-4", cancellation.border)}>
+              <div className="flex items-start gap-3">
+                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", cancellation.color)}><CancellationIcon className="size-4" /></span>
+                <div><p className="font-medium">{cancellation.label}</p><p className="mt-1 text-xs opacity-80">{cancellation.description}</p>{expense.cancellable_from && <p className="mt-2 text-xs font-medium">Earliest cancellation: {expense.cancellable_from}</p>}</div>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border bg-muted/30 p-3"><p className="text-xs text-muted-foreground">Next 12 months</p><p className="mt-1 text-lg font-semibold">{forecast ? money.format(Number(forecast.horizon_total)) : "—"}</p><p className="text-xs text-muted-foreground">{forecast ? `${forecast.horizon_payment_count} payments` : "Loading forecast"}</p></div>
               <div className="rounded-xl border bg-muted/30 p-3"><p className="text-xs text-muted-foreground">Remaining</p><p className="mt-1 text-lg font-semibold">{forecast ? (forecast.remaining_total === null ? "Ongoing" : money.format(Number(forecast.remaining_total))) : "—"}</p><p className="text-xs text-muted-foreground">From today</p></div>
@@ -360,8 +405,10 @@ function CommitmentSheet({
               <DetailRow label="Status" value={expense.active ? "Active" : "Paused"} />
               <DetailRow label="Category" value={category.name} />
               <DetailRow label="Start date" value={expense.start_date} />
-              <DetailRow label="End date" value={expense.end_date ?? "No end date"} />
+              <DetailRow label="Payments end" value={expense.end_date ?? "No end date"} />
+              {expense.cancellable_from && <DetailRow label="Cancellable from" value={expense.cancellable_from} />}
             </div>
+            {expense.cancellation_notes && <div className="rounded-xl border bg-muted/30 p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cancellation notes</p><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{expense.cancellation_notes}</p></div>}
             <div className="grid grid-cols-2 gap-2"><Button onClick={beginEditing}><Pencil />Edit</Button><Button variant="outline" onClick={() => void onToggle()}>{expense.active ? <Pause /> : <Play />}{expense.active ? "Pause" : "Resume"}</Button></div>
             <Button variant="destructive" className="w-full" onClick={() => void onDelete()}><Trash2 />Delete commitment</Button>
           </div>

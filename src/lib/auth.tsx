@@ -1,22 +1,20 @@
 import * as React from "react"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api"
+import type { UserProfile } from "src/lib/api"
+import { API_BASE_URL, AUTH_EXPIRED_EVENT, authenticatedFetch } from "src/lib/session-fetch"
 
 type AuthContextValue = {
   isAuthenticated: boolean
   isCheckingAuth: boolean
   user: AuthUser | null
+  updateUser: (user: AuthUser) => void
   establishSession: () => Promise<boolean>
   logout: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
 
-export type AuthUser = {
-  id: number | string
-  username: string
-  email?: string
-}
+export type AuthUser = UserProfile
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<AuthUser | null>(null)
@@ -27,8 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function checkSession() {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/me`, {
-          credentials: "include",
+        const response = await authenticatedFetch("/auth/me", {
           signal: controller.signal,
         })
 
@@ -50,11 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort()
   }, [])
 
+  React.useEffect(() => {
+    const handleExpiredSession = () => setUser(null)
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession)
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession)
+  }, [])
+
   async function establishSession() {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        credentials: "include",
-      })
+      const response = await authenticatedFetch("/auth/me")
 
       if (!response.ok) {
         setUser(null)
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: user !== null,
         isCheckingAuth,
         user,
+        updateUser: setUser,
         establishSession,
         logout,
       }}

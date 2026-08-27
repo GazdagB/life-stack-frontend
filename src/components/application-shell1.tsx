@@ -10,14 +10,13 @@ import {
   ListTodo,
   LogOut,
   Repeat2,
-  Settings,
   Sparkles,
   TrendingUp,
   User,
 } from "lucide-react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
 
-import { Avatar, AvatarFallback } from "src/components/ui/avatar"
+import { ProfileAvatar } from "src/components/profile-avatar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -108,6 +107,7 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
 
 const pageNames: Record<string, [string, string]> = {
   "/dashboard": ["Home", "Dashboard"],
+  "/profile": ["My account", "Profile"],
   "/todos": ["Tasks", "All tasks"],
   "/todos/today": ["Tasks", "Today"],
   "/todos/completed": ["Tasks", "Completed"],
@@ -192,8 +192,7 @@ function NavigationItem({ item }: { item: NavItem }) {
 function UserMenu() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const name = user?.username ?? "User"
-  const initials = name.slice(0, 2).toUpperCase()
+  const name = user?.display_name || user?.username || "User"
 
   function handleLogout() {
     void logout().finally(() => navigate("/login", { replace: true }))
@@ -205,9 +204,7 @@ function UserMenu() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
-              <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg bg-foreground text-xs text-background">{initials}</AvatarFallback>
-              </Avatar>
+              <ProfileAvatar user={user} className="size-8 rounded-lg" fallbackClassName="rounded-lg text-xs" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{name}</span>
                 <span className="truncate text-xs text-muted-foreground">{user?.email ?? "Signed in"}</span>
@@ -218,8 +215,7 @@ function UserMenu() {
           <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56" side="top" align="end">
             <DropdownMenuLabel>My account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><User className="size-4" /> Account</DropdownMenuItem>
-            <DropdownMenuItem><Settings className="size-4" /> Settings</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate("/profile")}><User className="size-4" /> Profile</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={handleLogout}><LogOut className="size-4" /> Log out</DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { CircleDollarSign, LoaderCircle, Plus, Search, Trash2, TrendingUp, X } from "lucide-react"
+import { CalendarDays, CircleDollarSign, LoaderCircle, Plus, ReceiptText, Search, Trash2, TrendingUp, X } from "lucide-react"
 import { useLocation } from "react-router"
 
 import { PageHeader } from "src/components/page-header"
@@ -7,13 +7,16 @@ import { Badge } from "src/components/ui/badge"
 import { Button } from "src/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
 import { Input } from "src/components/ui/input"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "src/components/ui/sheet"
+import { Textarea } from "src/components/ui/textarea"
 import { api, type Expense, type ExpenseInput } from "src/lib/api"
 import { expenseCategoryOptions, getExpenseCategory } from "src/lib/expense-categories"
 import { cn } from "src/lib/utils"
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" })
+const SpendingCharts = React.lazy(() => import("src/components/spending-charts").then((module) => ({ default: module.SpendingCharts })))
 const today = () => new Date().toISOString().slice(0, 10)
-const emptyExpense = (): ExpenseInput => ({ title: "", amount: "", expense_date: today(), category_id: 10 })
+const emptyExpense = (): ExpenseInput => ({ title: "", amount: "", expense_date: today(), category_id: 10, description: null })
 
 export default function Expenses() {
   const location = useLocation()
@@ -25,6 +28,7 @@ export default function Expenses() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [error, setError] = React.useState("")
+  const [selectedExpense, setSelectedExpense] = React.useState<Expense | null>(null)
 
   React.useEffect(() => {
     api.expenses.list().then(setExpenses).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Could not load expenses.")).finally(() => setIsLoading(false))
@@ -36,7 +40,7 @@ export default function Expenses() {
   const total = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
   const categoryTotals = expenseCategoryOptions.map((category) => ({ ...category, amount: expenses.filter((expense) => expense.category_id === category.id).reduce((sum, expense) => sum + Number(expense.amount), 0) })).filter((item) => item.amount > 0).sort((a, b) => b.amount - a.amount)
   const maxCategory = categoryTotals[0]?.amount ?? 1
-  const filteredExpenses = [...expenses].filter((expense) => `${expense.title} ${getExpenseCategory(expense.category_id).name}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => b.expense_date.localeCompare(a.expense_date))
+  const filteredExpenses = [...expenses].filter((expense) => `${expense.title} ${getExpenseCategory(expense.category_id).name} ${expense.description ?? ""}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => b.expense_date.localeCompare(a.expense_date))
 
   async function createExpense(event: React.FormEvent) {
     event.preventDefault(); setError(""); setIsSaving(true)
@@ -51,7 +55,7 @@ export default function Expenses() {
 
   async function deleteExpense(id: number) {
     const previous = expenses; setExpenses((current) => current.filter((expense) => expense.id !== id))
-    try { await api.expenses.delete(id) }
+    try { await api.expenses.delete(id); setSelectedExpense((current) => current?.id === id ? null : current) }
     catch (reason) { setExpenses(previous); setError(reason instanceof Error ? reason.message : "Could not delete the expense.") }
   }
 
@@ -69,6 +73,7 @@ export default function Expenses() {
           <div className="space-y-2 sm:col-span-2"><label className="text-sm font-medium" htmlFor="expense-title">Expense</label><Input id="expense-title" value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="What did you pay for?" required /></div>
           <div className="space-y-2"><label className="text-sm font-medium" htmlFor="expense-amount">Amount</label><Input id="expense-amount" type="number" min="0.01" step="0.01" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: event.target.value })} placeholder="0.00" required /></div>
           <div className="space-y-2"><label className="text-sm font-medium" htmlFor="expense-date">Date</label><Input id="expense-date" type="date" value={draft.expense_date} onChange={(event) => setDraft({ ...draft, expense_date: event.target.value })} required /></div>
+          <div className="space-y-2 sm:col-span-2 lg:col-span-4"><div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="expense-description">Description (optional)</label><span className="text-xs text-muted-foreground">{draft.description?.length ?? 0}/1000</span></div><Textarea id="expense-description" value={draft.description ?? ""} maxLength={1000} onChange={(event) => setDraft({ ...draft, description: event.target.value || null })} placeholder="What was this expense for? Add any details you may want to remember later." /></div>
           <fieldset className="space-y-2 sm:col-span-2 lg:col-span-4"><legend className="text-sm font-medium">Category</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{expenseCategoryOptions.map((category) => { const CategoryIcon = category.icon; const isSelected = draft.category_id === category.id; return <button key={category.id} type="button" onClick={() => setDraft({ ...draft, category_id: category.id })} aria-pressed={isSelected} className={cn("flex min-h-16 items-center gap-2 rounded-xl border p-2.5 text-left text-sm font-medium transition-all hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", isSelected ? category.border : "border-border bg-background text-muted-foreground hover:text-foreground")}><span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", category.color)}><CategoryIcon className="size-4" /></span><span className="leading-tight">{category.name}</span></button> })}</div></fieldset>
           <div className="sm:col-span-2 lg:col-span-4"><Button type="submit" disabled={isSaving}>{isSaving && <LoaderCircle className="animate-spin" />}Save expense</Button></div>
         </form></CardContent></Card>
@@ -78,6 +83,7 @@ export default function Expenses() {
 
       {isOverview ? (
         <>
+          <React.Suspense fallback={<ChartCardsLoading />}><SpendingCharts expenses={expenses} isLoading={isLoading} /></React.Suspense>
           <div className="grid gap-4 sm:grid-cols-3">
             <Card><CardHeader><CardDescription>This month</CardDescription><CardAction><TrendingUp className="size-4 text-muted-foreground" /></CardAction></CardHeader><CardContent><p className="text-2xl font-semibold">{isLoading ? "—" : money.format(monthTotal)}</p><p className="mt-1 text-xs text-muted-foreground">{monthExpenses.length} transactions</p></CardContent></Card>
             <Card><CardHeader><CardDescription>All-time tracked</CardDescription><CardAction><CircleDollarSign className="size-4 text-muted-foreground" /></CardAction></CardHeader><CardContent><p className="text-2xl font-semibold">{isLoading ? "—" : money.format(total)}</p><p className="mt-1 text-xs text-muted-foreground">Across {expenses.length} transactions</p></CardContent></Card>
@@ -95,12 +101,71 @@ export default function Expenses() {
         <>
           <div className="relative max-w-md"><Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search expenses…" /></div>
           <Card><CardContent className="divide-y p-0">
-            {filteredExpenses.map((expense) => { const category = getExpenseCategory(expense.category_id); const CategoryIcon = category.icon; return <div key={expense.id} className="group flex items-center gap-3 p-4 sm:p-5"><div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", category.color)}><CategoryIcon className="size-5" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{expense.title}</p><Badge variant="outline" className={category.border}>{category.name}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{expense.expense_date}</p></div><span className="font-semibold tabular-nums">{money.format(Number(expense.amount))}</span><Button variant="ghost" size="icon" className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => void deleteExpense(expense.id)} aria-label="Delete expense"><Trash2 /></Button></div> })}
+            {filteredExpenses.map((expense) => {
+              const category = getExpenseCategory(expense.category_id)
+              const CategoryIcon = category.icon
+              return (
+                <div key={expense.id} role="button" tabIndex={0} onClick={() => setSelectedExpense(expense)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedExpense(expense) }} className="group flex cursor-pointer items-center gap-3 p-4 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-5">
+                  <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", category.color)}><CategoryIcon className="size-5" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><p className="font-medium">{expense.title}</p><Badge variant="outline" className={category.border}>{category.name}</Badge></div>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{expense.expense_date}{expense.description ? ` · ${expense.description}` : ""}</p>
+                  </div>
+                  <span className="font-semibold tabular-nums">{money.format(Number(expense.amount))}</span>
+                  <Button variant="ghost" size="icon" className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100" onClick={(event) => { event.stopPropagation(); void deleteExpense(expense.id) }} aria-label="Delete expense"><Trash2 /></Button>
+                </div>
+              )
+            })}
             {isLoading && <div className="flex items-center justify-center gap-2 p-12 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading expenses…</div>}
             {!isLoading && filteredExpenses.length === 0 && <div className="p-12 text-center"><p className="font-medium">No expenses found</p><p className="mt-1 text-sm text-muted-foreground">Add your first expense to start tracking.</p></div>}
           </CardContent></Card>
         </>
       )}
+      {selectedExpense && <ExpenseSheet expense={selectedExpense} onClose={() => setSelectedExpense(null)} onDelete={() => deleteExpense(selectedExpense.id)} />}
     </>
   )
+}
+
+function ExpenseSheet({ expense, onClose, onDelete }: { expense: Expense; onClose: () => void; onDelete: () => Promise<void> }) {
+  const category = getExpenseCategory(expense.category_id)
+  const CategoryIcon = category.icon
+  const expenseDate = new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(`${expense.expense_date}T00:00:00`))
+  const recordedAt = expense.created_at ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(expense.created_at)) : null
+
+  return (
+    <Sheet open onOpenChange={(open) => { if (!open) onClose() }}>
+      <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetHeader className="border-b pr-12">
+          <div className="flex items-center gap-3">
+            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", category.color)}><CategoryIcon className="size-5" /></div>
+            <div className="min-w-0"><SheetTitle className="truncate text-lg">{expense.title}</SheetTitle><SheetDescription>{category.name}</SheetDescription></div>
+          </div>
+        </SheetHeader>
+        <div className="space-y-6 px-4 pb-6">
+          <div className="rounded-2xl border bg-muted/30 p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Amount paid</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight">{money.format(Number(expense.amount))}</p>
+          </div>
+          <div className="divide-y rounded-xl border">
+            <ExpenseDetailRow icon={CalendarDays} label="Expense date" value={expenseDate} />
+            <ExpenseDetailRow icon={CategoryIcon} label="Category" value={category.name} />
+            {recordedAt && <ExpenseDetailRow icon={ReceiptText} label="Recorded" value={recordedAt} />}
+          </div>
+          <div className="rounded-xl border p-4">
+            <div className="flex items-center gap-2 text-sm font-medium"><ReceiptText className="size-4 text-muted-foreground" />Description</div>
+            <p className={cn("mt-3 whitespace-pre-wrap text-sm leading-relaxed", !expense.description && "italic text-muted-foreground")}>{expense.description || "No description was added to this expense."}</p>
+          </div>
+          <Button variant="destructive" className="w-full" onClick={() => void onDelete()}><Trash2 />Delete expense</Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function ExpenseDetailRow({ icon: Icon, label, value }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; value: string }) {
+  return <div className="flex items-center gap-3 px-3 py-3 text-sm"><Icon className="size-4 shrink-0 text-muted-foreground" /><span className="text-muted-foreground">{label}</span><span className="ml-auto text-right font-medium">{value}</span></div>
+}
+
+function ChartCardsLoading() {
+  return <div className="grid gap-4 xl:grid-cols-2">{[0, 1].map((item) => <Card key={item}><CardHeader><div className="h-5 w-36 animate-pulse rounded bg-muted" /><div className="h-4 w-64 max-w-full animate-pulse rounded bg-muted" /></CardHeader><CardContent><div className="h-[280px] animate-pulse rounded-xl bg-muted/60" /></CardContent></Card>)}</div>
 }

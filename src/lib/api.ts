@@ -1,4 +1,17 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api"
+import { authenticatedFetch } from "src/lib/session-fetch"
+
+export type UserProfile = {
+  id: number | string
+  username: string
+  email: string
+  display_name: string | null
+  bio: string | null
+  has_avatar: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export type ProfileInput = Pick<UserProfile, "username" | "email" | "display_name" | "bio">
 
 export type TodoStatus = "not_started" | "in_progress" | "completed" | "canceled"
 export type TodoPriority = "P1" | "P2" | "P3" | "P4" | "P5"
@@ -33,9 +46,10 @@ export type Expense = {
   recurrence?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
 }
 
-export type ExpenseInput = Pick<Expense, "title" | "amount" | "expense_date" | "category_id">
+export type ExpenseInput = Pick<Expense, "title" | "amount" | "expense_date" | "category_id" | "description">
 
 export type RecurringFrequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
+export type CancellationDifficulty = "EASY" | "NOTICE_REQUIRED" | "CONTRACT_LOCKED" | "NON_CANCELLABLE" | "ESSENTIAL"
 
 export type RecurringExpense = {
   id: number
@@ -45,6 +59,9 @@ export type RecurringExpense = {
   frequency: RecurringFrequency
   start_date: string
   end_date: string | null
+  cancellation_difficulty: CancellationDifficulty
+  cancellable_from: string | null
+  cancellation_notes: string | null
   active: boolean
   created_at?: string
   updated_at?: string
@@ -52,7 +69,7 @@ export type RecurringExpense = {
 
 export type RecurringExpenseInput = Pick<
   RecurringExpense,
-  "title" | "amount" | "category_id" | "frequency" | "start_date" | "end_date" | "active"
+  "title" | "amount" | "category_id" | "frequency" | "start_date" | "end_date" | "cancellation_difficulty" | "cancellable_from" | "cancellation_notes" | "active"
 >
 
 export type RecurringCommitmentForecast = {
@@ -93,11 +110,11 @@ export class ApiError extends Error {
 }
 
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
+  const hasJsonBody = Boolean(init?.body) && !(init?.body instanceof FormData)
+  const response = await authenticatedFetch(path, {
     ...init,
     headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   })
@@ -105,8 +122,9 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let message = "Something went wrong. Please try again."
     try {
-      const body = (await response.json()) as { detail?: string }
-      if (body.detail) message = body.detail
+      const body = (await response.json()) as { detail?: string | Array<{ msg?: string }> }
+      if (typeof body.detail === "string") message = body.detail
+      else if (Array.isArray(body.detail)) message = body.detail.map((item) => item.msg).filter(Boolean).join(" ") || message
     } catch {
       // Keep the fallback for non-JSON server responses.
     }
@@ -117,7 +135,28 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
+async function apiBlobRequest(path: string): Promise<Blob> {
+  const response = await authenticatedFetch(path)
+  if (!response.ok) throw new ApiError("Could not load the profile picture.", response.status)
+  return response.blob()
+}
+
 export const api = {
+  profile: {
+    update: (input: ProfileInput) =>
+      apiRequest<UserProfile>("/auth/profile", {
+        method: "PUT",
+        body: JSON.stringify(input),
+      }),
+    uploadAvatar: (file: File) => {
+      const body = new FormData()
+      body.append("avatar", file)
+      return apiRequest<UserProfile>("/auth/profile/avatar", { method: "POST", body })
+    },
+    getAvatar: () => apiBlobRequest("/auth/profile/avatar"),
+    deleteAvatar: () =>
+      apiRequest<UserProfile>("/auth/profile/avatar", { method: "DELETE" }),
+  },
   todos: {
     list: () => apiRequest<Todo[]>("/todos/"),
     create: async (input: TodoInput) => {

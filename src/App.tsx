@@ -5,6 +5,7 @@ import { ProtectedRoute, PublicOnlyRoute } from './components/auth-route'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Login from './pages/Login'
+import Profile from './pages/Profile'
 import RecurringExpenses from './pages/RecurringExpenses'
 import Todos from './pages/Todos'
 
@@ -21,6 +22,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<ApplicationShell1 className="min-h-svh" />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/todos" element={<Todos />} />
             <Route path="/todos/today" element={<Todos />} />
             <Route path="/todos/completed" element={<Todos />} />
