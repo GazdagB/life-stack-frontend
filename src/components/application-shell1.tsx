@@ -2,14 +2,18 @@ import * as React from "react"
 import {
   CheckCircle2,
   Calculator,
+  Bookmark,
   ChevronRight,
   ChevronsUpDown,
   CircleDollarSign,
   ClipboardList,
+  Clapperboard,
   LayoutDashboard,
   ListTodo,
   LogOut,
   Repeat2,
+  Search,
+  Star,
   Sparkles,
   TrendingUp,
   User,
@@ -101,6 +105,17 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
           { label: "Spending overview", href: "/expenses/overview", icon: TrendingUp },
         ],
       },
+      {
+        label: "Movies",
+        href: "/movies",
+        icon: Clapperboard,
+        children: [
+          { label: "Discover", href: "/movies", icon: Search },
+          { label: "Want to watch", href: "/movies/want-to-watch", icon: Bookmark },
+          { label: "Watched & rated", href: "/movies/watched", icon: Star },
+          { label: "AI suggestions", href: "/movies/suggestions", icon: Sparkles },
+        ],
+      },
     ],
   },
 ]
@@ -115,6 +130,10 @@ const pageNames: Record<string, [string, string]> = {
   "/expenses/recurring": ["Expenses", "Recurring"],
   "/expenses/coverage": ["Expenses", "Coverage plan"],
   "/expenses/overview": ["Expenses", "Spending overview"],
+  "/movies": ["Movies", "Discover"],
+  "/movies/want-to-watch": ["Movies", "Want to watch"],
+  "/movies/watched": ["Movies", "Watched & rated"],
+  "/movies/suggestions": ["Movies", "AI suggestions"],
 }
 
 function Brand() {

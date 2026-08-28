@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
+import Movies from './pages/Movies'
 import RecurringExpenses from './pages/RecurringExpenses'
 import Todos from './pages/Todos'
 
@@ -30,6 +31,10 @@ function App() {
             <Route path="/expenses/recurring" element={<RecurringExpenses />} />
             <Route path="/expenses/coverage" element={<RecurringExpenses />} />
             <Route path="/expenses/overview" element={<Expenses />} />
+            <Route path="/movies" element={<Movies />} />
+            <Route path="/movies/want-to-watch" element={<Movies />} />
+            <Route path="/movies/watched" element={<Movies />} />
+            <Route path="/movies/suggestions" element={<Movies />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

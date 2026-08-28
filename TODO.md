@@ -2,6 +2,15 @@
 
 ## Later
 
+### AI movie recommendations
+
+- [x] Recommend a movie from the user's 10 most recently rated films; do not include want-to-watch items without a rating.
+- [x] Weight the user's personal scores and critiques more strongly than external ratings.
+- [x] Send only the minimum movie metadata required to the model and document the privacy boundary.
+- [x] Exclude movies already present in either personal movie list.
+- [x] Return a concise explanation that connects the recommendation to specific preferences without inventing facts.
+- [ ] Add feedback controls so accepted and rejected recommendations can improve later suggestions.
+
 ### Automatic bank transaction tracking
 
 - [ ] Confirm the countries and exact banks that need to be supported.

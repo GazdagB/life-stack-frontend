@@ -99,6 +99,67 @@ export type RecurringCoverage = {
   commitments: RecurringCommitmentForecast[]
 }
 
+export type MovieListStatus = "WANT_TO_WATCH" | "WATCHED"
+
+export type ExternalMovieRating = {
+  source: string
+  value: string
+}
+
+export type MovieSearchResult = {
+  imdb_id: string
+  title: string
+  year: string | null
+  poster_url: string | null
+  library_id: number | null
+  list_status: MovieListStatus | null
+}
+
+export type MovieDetails = MovieSearchResult & {
+  plot: string | null
+  director: string | null
+  actors: string | null
+  genre: string | null
+  runtime: string | null
+  content_rating: string | null
+  released: string | null
+  awards: string | null
+  country: string | null
+  language: string | null
+  box_office: string | null
+  external_ratings: ExternalMovieRating[]
+}
+
+export type UserMovie = Omit<MovieDetails, "library_id" | "list_status"> & {
+  id: number
+  list_status: MovieListStatus
+  personal_rating: string | number | null
+  critique: string | null
+  watched_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type UserMovieUpdate = Pick<UserMovie, "list_status" | "personal_rating" | "critique" | "watched_at">
+
+export type MovieSearchResponse = {
+  results: MovieSearchResult[]
+  total_results: number
+}
+
+export type MovieRecommendation = MovieDetails & {
+  recommendation_reason: string
+  matched_preferences: string[]
+  based_on: Array<{
+    title: string
+    personal_rating: string | number
+  }>
+}
+
+export type MovieRecommendationsResponse = {
+  recommendations: MovieRecommendation[]
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -210,6 +271,27 @@ export const api = {
       }),
     delete: (id: number) =>
       apiRequest<{ message: string; id: number }>(`/recurring-expenses/${id}`, { method: "DELETE" }),
+  },
+  movies: {
+    search: (query: string, page = 1) =>
+      apiRequest<MovieSearchResponse>(`/movies/search?q=${encodeURIComponent(query)}&page=${page}`),
+    details: (imdbId: string) => apiRequest<MovieDetails>(`/movies/catalog/${imdbId}`),
+    get: (id: number) => apiRequest<UserMovie>(`/movies/${id}`),
+    list: (status?: MovieListStatus) =>
+      apiRequest<UserMovie[]>(`/movies/${status ? `?list_status=${status}` : ""}`),
+    recommend: () => apiRequest<MovieRecommendationsResponse>("/movies/recommendations", { method: "POST" }),
+    add: (imdbId: string, listStatus: MovieListStatus) =>
+      apiRequest<UserMovie>("/movies/", {
+        method: "POST",
+        body: JSON.stringify({ imdb_id: imdbId, list_status: listStatus }),
+      }),
+    update: (id: number, input: UserMovieUpdate) =>
+      apiRequest<UserMovie>(`/movies/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+      }),
+    delete: (id: number) =>
+      apiRequest<{ message: string; id: number }>(`/movies/${id}`, { method: "DELETE" }),
   },
 }
 
