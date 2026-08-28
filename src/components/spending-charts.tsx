@@ -24,6 +24,12 @@ const compactMoney = new Intl.NumberFormat("en-US", {
 })
 
 const monthLabel = new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" })
+const dayLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
+const fullDayLabel = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" })
+
+const dailyConfig = {
+  spending: { label: "Spending", color: "var(--chart-1)" },
+} satisfies ChartConfig
 
 const monthlyConfig = {
   spending: { label: "Spending", color: "var(--chart-2)" },
@@ -35,6 +41,14 @@ const cumulativeConfig = {
 
 function monthKey(year: number, zeroBasedMonth: number) {
   return `${year}-${String(zeroBasedMonth + 1).padStart(2, "0")}`
+}
+
+function dayKey(date: Date) {
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-")
+}
+
+function shiftDay(date: Date, offset: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset)
 }
 
 function shiftMonth(date: Date, offset: number) {
@@ -53,6 +67,25 @@ function totalsByMonth(expenses: Expense[]) {
     totals.set(key, (totals.get(key) ?? 0) + Number(expense.amount))
   })
   return totals
+}
+
+function buildDailyData(expenses: Expense[]) {
+  const totals = new Map<string, number>()
+  expenses.forEach((expense) => {
+    totals.set(expense.expense_date, (totals.get(expense.expense_date) ?? 0) + Number(expense.amount))
+  })
+
+  const today = new Date()
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = shiftDay(today, index - 29)
+    const key = dayKey(date)
+    return {
+      key,
+      label: dayLabel.format(date),
+      fullLabel: fullDayLabel.format(date),
+      spending: totals.get(key) ?? 0,
+    }
+  })
 }
 
 function buildMonthlyData(expenses: Expense[]) {
@@ -97,51 +130,87 @@ function MoneyTooltip({ value, label }: { value: number; label: string }) {
 }
 
 export function SpendingCharts({ expenses, isLoading }: { expenses: Expense[]; isLoading: boolean }) {
+  const dailyData = React.useMemo(() => buildDailyData(expenses), [expenses])
   const monthlyData = React.useMemo(() => buildMonthlyData(expenses), [expenses])
   const cumulativeData = React.useMemo(() => buildCumulativeData(expenses), [expenses])
   const hasExpenses = expenses.length > 0
+  const dailyTotal = dailyData.reduce((sum, day) => sum + day.spending, 0)
+  const activeDays = dailyData.filter((day) => day.spending > 0).length
+  const hasDailyExpenses = activeDays > 0
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Monthly spending</CardTitle>
-          <CardDescription>Actual expenses recorded during the last 12 months.</CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <CardTitle>Daily spending</CardTitle>
+              <CardDescription>Recorded expenses day by day over the last 30 days.</CardDescription>
+            </div>
+            {!isLoading && hasDailyExpenses && (
+              <div className="text-right">
+                <p className="text-lg font-semibold tabular-nums">{money.format(dailyTotal)}</p>
+                <p className="text-xs text-muted-foreground">{activeDays} spending {activeDays === 1 ? "day" : "days"}</p>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <ChartLoading /> : hasExpenses ? (
-            <ChartContainer config={monthlyConfig} className="h-[280px] w-full aspect-auto">
-              <BarChart data={monthlyData} accessibilityLayer margin={{ left: 4, right: 4 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={10} interval="preserveStartEnd" />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} width={64} tickFormatter={(value) => compactMoney.format(Number(value))} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={(value, _name, item) => <MoneyTooltip value={Number(value)} label={String(item.payload?.label ?? "Month")} />} />} />
-                <Bar dataKey="spending" fill="var(--color-spending)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
-          ) : <ChartEmpty />}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All-time spending</CardTitle>
-          <CardDescription>Cumulative tracked expenses, grouped month by month.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <ChartLoading /> : hasExpenses ? (
-            <ChartContainer config={cumulativeConfig} className="h-[280px] w-full aspect-auto">
-              <LineChart data={cumulativeData} accessibilityLayer margin={{ left: 4, right: 12 }}>
+          {isLoading ? <ChartLoading /> : hasDailyExpenses ? (
+            <ChartContainer config={dailyConfig} className="h-[300px] w-full aspect-auto">
+              <LineChart data={dailyData} accessibilityLayer margin={{ left: 4, right: 12 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={10} minTickGap={28} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} width={64} tickFormatter={(value) => compactMoney.format(Number(value))} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel indicator="line" formatter={(value, _name, item) => <MoneyTooltip value={Number(value)} label={String(item.payload?.label ?? "Month")} />} />} />
-                <Line dataKey="cumulative" type="monotone" stroke="var(--color-cumulative)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel indicator="line" formatter={(value, _name, item) => <MoneyTooltip value={Number(value)} label={String(item.payload?.fullLabel ?? item.payload?.label ?? "Day")} />} />} />
+                <Line dataKey="spending" type="linear" stroke="var(--color-spending)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
               </LineChart>
             </ChartContainer>
-          ) : <ChartEmpty />}
+          ) : <ChartEmpty message="No expenses were recorded during the last 30 days." />}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly spending</CardTitle>
+            <CardDescription>Actual expenses recorded during the last 12 months.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? <ChartLoading /> : hasExpenses ? (
+              <ChartContainer config={monthlyConfig} className="h-[280px] w-full aspect-auto">
+                <BarChart data={monthlyData} accessibilityLayer margin={{ left: 4, right: 4 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={10} interval="preserveStartEnd" />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} width={64} tickFormatter={(value) => compactMoney.format(Number(value))} />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={(value, _name, item) => <MoneyTooltip value={Number(value)} label={String(item.payload?.label ?? "Month")} />} />} />
+                  <Bar dataKey="spending" fill="var(--color-spending)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            ) : <ChartEmpty />}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>All-time spending</CardTitle>
+            <CardDescription>Cumulative tracked expenses, grouped month by month.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? <ChartLoading /> : hasExpenses ? (
+              <ChartContainer config={cumulativeConfig} className="h-[280px] w-full aspect-auto">
+                <LineChart data={cumulativeData} accessibilityLayer margin={{ left: 4, right: 12 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={10} minTickGap={28} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} width={64} tickFormatter={(value) => compactMoney.format(Number(value))} />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel indicator="line" formatter={(value, _name, item) => <MoneyTooltip value={Number(value)} label={String(item.payload?.label ?? "Month")} />} />} />
+                  <Line dataKey="cumulative" type="monotone" stroke="var(--color-cumulative)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ChartContainer>
+            ) : <ChartEmpty />}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -150,6 +219,6 @@ function ChartLoading() {
   return <div className="h-[280px] animate-pulse rounded-xl bg-muted/60" />
 }
 
-function ChartEmpty() {
-  return <div className="flex h-[280px] items-center justify-center rounded-xl border border-dashed text-center text-sm text-muted-foreground">Add expenses to start building your spending history.</div>
+function ChartEmpty({ message = "Add expenses to start building your spending history." }: { message?: string }) {
+  return <div className="flex h-[280px] items-center justify-center rounded-xl border border-dashed px-6 text-center text-sm text-muted-foreground">{message}</div>
 }

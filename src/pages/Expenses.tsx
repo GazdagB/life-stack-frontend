@@ -167,5 +167,5 @@ function ExpenseDetailRow({ icon: Icon, label, value }: { icon: React.ComponentT
 }
 
 function ChartCardsLoading() {
-  return <div className="grid gap-4 xl:grid-cols-2">{[0, 1].map((item) => <Card key={item}><CardHeader><div className="h-5 w-36 animate-pulse rounded bg-muted" /><div className="h-4 w-64 max-w-full animate-pulse rounded bg-muted" /></CardHeader><CardContent><div className="h-[280px] animate-pulse rounded-xl bg-muted/60" /></CardContent></Card>)}</div>
+  return <div className="space-y-4"><Card><CardHeader><div className="h-5 w-36 animate-pulse rounded bg-muted" /><div className="h-4 w-64 max-w-full animate-pulse rounded bg-muted" /></CardHeader><CardContent><div className="h-[300px] animate-pulse rounded-xl bg-muted/60" /></CardContent></Card><div className="grid gap-4 xl:grid-cols-2">{[0, 1].map((item) => <Card key={item}><CardHeader><div className="h-5 w-36 animate-pulse rounded bg-muted" /><div className="h-4 w-64 max-w-full animate-pulse rounded bg-muted" /></CardHeader><CardContent><div className="h-[280px] animate-pulse rounded-xl bg-muted/60" /></CardContent></Card>)}</div></div>
 }
