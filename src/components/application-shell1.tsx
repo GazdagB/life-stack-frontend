@@ -9,16 +9,22 @@ import {
   ClipboardList,
   Clapperboard,
   LayoutDashboard,
+  Landmark,
   ListTodo,
   LogOut,
   Repeat2,
   Search,
   Star,
   Sparkles,
+  Settings2,
   TrendingUp,
   User,
+  Building2,
+  FileText,
+  Users,
 } from "lucide-react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
+import { useTranslation } from "react-i18next"
 
 import { ProfileAvatar } from "src/components/profile-avatar"
 import {
@@ -68,75 +74,97 @@ import { cn } from "src/lib/utils"
 type IconType = React.ComponentType<React.SVGProps<SVGSVGElement>>
 
 type NavItem = {
-  label: string
+  labelKey: string
   href: string
   icon: IconType
   exact?: boolean
-  children?: Array<{ label: string; href: string; icon: IconType }>
+  children?: Array<{ labelKey: string; href: string; icon: IconType }>
 }
 const navigation: Array<{ title: string; items: NavItem[] }> = [
   {
-    title: "Home",
+    title: "nav.groups.home",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      { labelKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
     ],
   },
   {
-    title: "Life management",
+    title: "nav.groups.life",
     items: [
       {
-        label: "Tasks",
+        labelKey: "nav.tasks",
         href: "/todos",
         icon: ClipboardList,
         children: [
-          { label: "All tasks", href: "/todos", icon: ListTodo },
-          { label: "Today", href: "/todos/today", icon: Sparkles },
-          { label: "Completed", href: "/todos/completed", icon: CheckCircle2 },
+          { labelKey: "nav.allTasks", href: "/todos", icon: ListTodo },
+          { labelKey: "nav.today", href: "/todos/today", icon: Sparkles },
+          { labelKey: "nav.completed", href: "/todos/completed", icon: CheckCircle2 },
         ],
       },
       {
-        label: "Expenses",
+        labelKey: "nav.expenses",
         href: "/expenses",
         icon: CircleDollarSign,
         children: [
-          { label: "All expenses", href: "/expenses", icon: CircleDollarSign },
-          { label: "Recurring", href: "/expenses/recurring", icon: Repeat2 },
-          { label: "Coverage plan", href: "/expenses/coverage", icon: Calculator },
-          { label: "Spending overview", href: "/expenses/overview", icon: TrendingUp },
+          { labelKey: "nav.allExpenses", href: "/expenses", icon: CircleDollarSign },
+          { labelKey: "nav.recurring", href: "/expenses/recurring", icon: Repeat2 },
+          { labelKey: "nav.coveragePlan", href: "/expenses/coverage", icon: Calculator },
+          { labelKey: "nav.spendingOverview", href: "/expenses/overview", icon: TrendingUp },
         ],
       },
       {
-        label: "Movies",
+        labelKey: "nav.movies",
         href: "/movies",
         icon: Clapperboard,
         children: [
-          { label: "Discover", href: "/movies", icon: Search },
-          { label: "Want to watch", href: "/movies/want-to-watch", icon: Bookmark },
-          { label: "Watched & rated", href: "/movies/watched", icon: Star },
-          { label: "AI suggestions", href: "/movies/suggestions", icon: Sparkles },
+          { labelKey: "nav.discover", href: "/movies", icon: Search },
+          { labelKey: "nav.wantToWatch", href: "/movies/want-to-watch", icon: Bookmark },
+          { labelKey: "nav.watchedRated", href: "/movies/watched", icon: Star },
+          { labelKey: "nav.aiSuggestions", href: "/movies/suggestions", icon: Sparkles },
         ],
       },
+      {
+        labelKey: "nav.business",
+        href: "/business",
+        icon: Building2,
+        children: [
+          { labelKey: "nav.overview", href: "/business", icon: Landmark },
+          { labelKey: "nav.clients", href: "/business/clients", icon: Users },
+          { labelKey: "nav.invoices", href: "/business/invoices", icon: FileText },
+        ],
+      },
+    ],
+  },
+  {
+    title: "nav.groups.account",
+    items: [
+      { labelKey: "nav.profile", href: "/profile", icon: User, exact: true },
+      { labelKey: "nav.settings", href: "/settings", icon: Settings2, exact: true },
     ],
   },
 ]
 
 const pageNames: Record<string, [string, string]> = {
-  "/dashboard": ["Home", "Dashboard"],
-  "/profile": ["My account", "Profile"],
-  "/todos": ["Tasks", "All tasks"],
-  "/todos/today": ["Tasks", "Today"],
-  "/todos/completed": ["Tasks", "Completed"],
-  "/expenses": ["Expenses", "All expenses"],
-  "/expenses/recurring": ["Expenses", "Recurring"],
-  "/expenses/coverage": ["Expenses", "Coverage plan"],
-  "/expenses/overview": ["Expenses", "Spending overview"],
-  "/movies": ["Movies", "Discover"],
-  "/movies/want-to-watch": ["Movies", "Want to watch"],
-  "/movies/watched": ["Movies", "Watched & rated"],
-  "/movies/suggestions": ["Movies", "AI suggestions"],
+  "/dashboard": ["nav.groups.home", "nav.dashboard"],
+  "/profile": ["account.myAccount", "nav.profile"],
+  "/settings": ["account.myAccount", "nav.settings"],
+  "/todos": ["nav.tasks", "nav.allTasks"],
+  "/todos/today": ["nav.tasks", "nav.today"],
+  "/todos/completed": ["nav.tasks", "nav.completed"],
+  "/expenses": ["nav.expenses", "nav.allExpenses"],
+  "/expenses/recurring": ["nav.expenses", "nav.recurring"],
+  "/expenses/coverage": ["nav.expenses", "nav.coveragePlan"],
+  "/expenses/overview": ["nav.expenses", "nav.spendingOverview"],
+  "/movies": ["nav.movies", "nav.discover"],
+  "/movies/want-to-watch": ["nav.movies", "nav.wantToWatch"],
+  "/movies/watched": ["nav.movies", "nav.watchedRated"],
+  "/movies/suggestions": ["nav.movies", "nav.aiSuggestions"],
+  "/business": ["nav.business", "nav.overview"],
+  "/business/clients": ["nav.business", "nav.clients"],
+  "/business/invoices": ["nav.business", "nav.invoices"],
 }
 
 function Brand() {
+  const { t } = useTranslation()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -147,7 +175,7 @@ function Brand() {
             </div>
             <div className="grid flex-1 text-left leading-tight">
               <span className="font-semibold tracking-tight">Life Stack</span>
-              <span className="text-xs text-muted-foreground">Personal operating system</span>
+              <span className="text-xs text-muted-foreground">{t("brand.subtitle")}</span>
             </div>
           </NavLink>
         </SidebarMenuButton>
@@ -157,6 +185,7 @@ function Brand() {
 }
 
 function NavigationItem({ item }: { item: NavItem }) {
+  const { t } = useTranslation()
   const location = useLocation()
   const Icon = item.icon
   const hasChildren = Boolean(item.children?.length)
@@ -168,7 +197,7 @@ function NavigationItem({ item }: { item: NavItem }) {
         <SidebarMenuButton asChild isActive={isSectionActive}>
           <NavLink to={item.href} end={item.exact}>
             <Icon className="size-4" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -181,7 +210,7 @@ function NavigationItem({ item }: { item: NavItem }) {
         <CollapsibleTrigger asChild>
           <SidebarMenuButton isActive={isSectionActive}>
             <Icon className="size-4" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
             <ChevronRight className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
@@ -195,7 +224,7 @@ function NavigationItem({ item }: { item: NavItem }) {
                   <SidebarMenuSubButton asChild isActive={isActive}>
                     <NavLink to={child.href} end>
                       <ChildIcon className="size-3.5" />
-                      <span>{child.label}</span>
+                      <span>{t(child.labelKey)}</span>
                     </NavLink>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -209,6 +238,7 @@ function NavigationItem({ item }: { item: NavItem }) {
 }
 
 function UserMenu() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const name = user?.display_name || user?.username || "User"
@@ -226,17 +256,18 @@ function UserMenu() {
               <ProfileAvatar user={user} className="size-8 rounded-lg" fallbackClassName="rounded-lg text-xs" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{name}</span>
-                <span className="truncate text-xs text-muted-foreground">{user?.email ?? "Signed in"}</span>
+                <span className="truncate text-xs text-muted-foreground">{user?.email ?? t("account.signedIn")}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56" side="top" align="end">
-            <DropdownMenuLabel>My account</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("account.myAccount")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => navigate("/profile")}><User className="size-4" /> Profile</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate("/profile")}><User className="size-4" /> {t("account.profile")}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate("/settings")}><Settings2 className="size-4" /> {t("account.settings")}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleLogout}><LogOut className="size-4" /> Log out</DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleLogout}><LogOut className="size-4" /> {t("account.logout")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
@@ -245,6 +276,7 @@ function UserMenu() {
 }
 
 function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation()
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader><Brand /></SidebarHeader>
@@ -252,7 +284,7 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <ScrollArea className="min-h-0 flex-1">
           {navigation.map((group) => (
             <SidebarGroup key={group.title}>
-              <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+              <SidebarGroupLabel>{t(group.title)}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => <NavigationItem key={item.href} item={item} />)}
@@ -269,8 +301,9 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 }
 
 export function ApplicationShell1({ className }: { className?: string }) {
+  const { t } = useTranslation()
   const location = useLocation()
-  const [section, page] = pageNames[location.pathname] ?? ["Life Stack", "Dashboard"]
+  const [sectionKey, pageKey] = pageNames[location.pathname] ?? ["nav.groups.home", "nav.dashboard"]
 
   return (
     <SidebarProvider className={cn("bg-muted/30", className)}>
@@ -281,9 +314,9 @@ export function ApplicationShell1({ className }: { className?: string }) {
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem className="hidden sm:block"><span className="text-muted-foreground">{section}</span></BreadcrumbItem>
+              <BreadcrumbItem className="hidden sm:block"><span className="text-muted-foreground">{t(sectionKey)}</span></BreadcrumbItem>
               <BreadcrumbSeparator className="hidden sm:block" />
-              <BreadcrumbItem><BreadcrumbPage>{page}</BreadcrumbPage></BreadcrumbItem>
+              <BreadcrumbItem><BreadcrumbPage>{t(pageKey)}</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </header>

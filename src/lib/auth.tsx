@@ -2,6 +2,7 @@ import * as React from "react"
 
 import type { UserProfile } from "src/lib/api"
 import { API_BASE_URL, AUTH_EXPIRED_EVENT, authenticatedFetch } from "src/lib/session-fetch"
+import { changeAppLanguage, normalizeAppLanguage } from "src/i18n"
 
 type AuthContextValue = {
   isAuthenticated: boolean
@@ -46,6 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void checkSession()
     return () => controller.abort()
   }, [])
+
+  React.useEffect(() => {
+    if (user?.preferred_language) {
+      void changeAppLanguage(normalizeAppLanguage(user.preferred_language))
+    }
+  }, [user?.preferred_language])
 
   React.useEffect(() => {
     const handleExpiredSession = () => setUser(null)

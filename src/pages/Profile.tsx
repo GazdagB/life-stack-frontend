@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Camera, LoaderCircle, Pencil, Save, Trash2, UserRound } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "src/components/page-header"
 import { ProfileAvatar } from "src/components/profile-avatar"
@@ -28,6 +29,7 @@ function draftFromUser(user: ReturnType<typeof useAuth>["user"]): ProfileDraft {
 }
 
 export default function Profile() {
+  const { t, i18n } = useTranslation("core")
   const { user, updateUser } = useAuth()
   const [draft, setDraft] = React.useState<ProfileDraft>(() => draftFromUser(user))
   const [isSaving, setIsSaving] = React.useState(false)
@@ -50,9 +52,9 @@ export default function Profile() {
       })
       updateUser(updated)
       setDraft(draftFromUser(updated))
-      setSuccess("Profile details saved.")
+      setSuccess(t("profile.detailsSaved"))
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save your profile.")
+      setError(reason instanceof Error ? reason.message : t("profile.saveError"))
     } finally {
       setIsSaving(false)
     }
@@ -64,7 +66,7 @@ export default function Profile() {
     if (!file) return
 
     if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      setError("Choose a PNG, JPEG, or WebP image no larger than 5 MB.")
+      setError(t("profile.invalidImage"))
       return
     }
 
@@ -74,9 +76,9 @@ export default function Profile() {
     try {
       const updated = await api.profile.uploadAvatar(file)
       updateUser(updated)
-      setSuccess("Profile picture updated.")
+      setSuccess(t("profile.pictureUpdated"))
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not upload your profile picture.")
+      setError(reason instanceof Error ? reason.message : t("profile.uploadError"))
     } finally {
       setIsUploading(false)
     }
@@ -89,24 +91,24 @@ export default function Profile() {
     try {
       const updated = await api.profile.deleteAvatar()
       updateUser(updated)
-      setSuccess("Profile picture removed.")
+      setSuccess(t("profile.pictureRemoved"))
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not remove your profile picture.")
+      setError(reason instanceof Error ? reason.message : t("profile.removeError"))
     } finally {
       setIsUploading(false)
     }
   }
 
   const createdAt = user?.created_at
-    ? new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(user.created_at))
+    ? new Intl.DateTimeFormat(i18n.resolvedLanguage, { dateStyle: "long" }).format(new Date(user.created_at))
     : null
 
   return (
     <>
       <PageHeader
-        eyebrow="My account"
-        title="Profile"
-        description="Manage the identity and profile picture shown throughout Life Stack."
+        eyebrow={t("profile.eyebrow")}
+        title={t("profile.title")}
+        description={t("profile.description")}
       />
 
       {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
@@ -115,15 +117,15 @@ export default function Profile() {
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Profile picture</CardTitle>
-            <CardDescription>PNG, JPEG, or WebP. Maximum 5 MB.</CardDescription>
+            <CardTitle>{t("profile.picture")}</CardTitle>
+            <CardDescription>{t("profile.pictureHelp")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center text-center">
             <div className="group relative">
-              <button type="button" className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4" onClick={() => fileInputRef.current?.click()} disabled={isUploading} aria-label={user?.has_avatar ? "Change profile picture" : "Upload profile picture"}>
+              <button type="button" className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4" onClick={() => fileInputRef.current?.click()} disabled={isUploading} aria-label={user?.has_avatar ? t("profile.changePicture") : t("profile.uploadPicture")}>
                 <ProfileAvatar user={user} className="size-32 rounded-full shadow-sm transition-opacity group-hover:opacity-90" fallbackClassName="text-3xl" />
               </button>
-              <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full shadow-md" onClick={() => fileInputRef.current?.click()} disabled={isUploading} aria-label={user?.has_avatar ? "Edit profile picture" : "Add profile picture"}>
+              <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full shadow-md" onClick={() => fileInputRef.current?.click()} disabled={isUploading} aria-label={user?.has_avatar ? t("profile.editPicture") : t("profile.addPicture")}>
                 {isUploading ? <LoaderCircle className="animate-spin" /> : <Pencil />}
               </Button>
             </div>
@@ -133,11 +135,11 @@ export default function Profile() {
             <div className="mt-5 grid w-full gap-2">
               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                 {isUploading ? <LoaderCircle className="animate-spin" /> : <Camera />}
-                {user?.has_avatar ? "Change picture" : "Upload picture"}
+                {user?.has_avatar ? t("profile.change") : t("profile.upload")}
               </Button>
-              {user?.has_avatar && <Button type="button" variant="outline" onClick={() => void removeAvatar()} disabled={isUploading}><Trash2 />Remove picture</Button>}
+              {user?.has_avatar && <Button type="button" variant="outline" onClick={() => void removeAvatar()} disabled={isUploading}><Trash2 />{t("profile.remove")}</Button>}
             </div>
-            {createdAt && <p className="mt-5 text-xs text-muted-foreground">Member since {createdAt}</p>}
+            {createdAt && <p className="mt-5 text-xs text-muted-foreground">{t("profile.memberSince", { date: createdAt })}</p>}
           </CardContent>
         </Card>
 
@@ -145,18 +147,18 @@ export default function Profile() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-muted p-2.5"><UserRound className="size-5" /></div>
-              <div><CardTitle>Personal details</CardTitle><CardDescription>Update how your account is identified.</CardDescription></div>
+              <div><CardTitle>{t("profile.personalDetails")}</CardTitle><CardDescription>{t("profile.personalDescription")}</CardDescription></div>
             </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={saveProfile} className="space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2"><Label htmlFor="profile-display-name">Display name</Label><Input id="profile-display-name" value={draft.display_name} maxLength={80} onChange={(event) => setDraft({ ...draft, display_name: event.target.value })} placeholder="How you want to be addressed" autoComplete="name" /></div>
-                <div className="space-y-2"><Label htmlFor="profile-username">Username</Label><Input id="profile-username" value={draft.username} minLength={3} maxLength={20} onChange={(event) => setDraft({ ...draft, username: event.target.value })} autoComplete="username" required /></div>
+                <div className="space-y-2"><Label htmlFor="profile-display-name">{t("profile.displayName")}</Label><Input id="profile-display-name" value={draft.display_name} maxLength={80} onChange={(event) => setDraft({ ...draft, display_name: event.target.value })} placeholder={t("profile.displayNamePlaceholder")} autoComplete="name" /></div>
+                <div className="space-y-2"><Label htmlFor="profile-username">{t("profile.username")}</Label><Input id="profile-username" value={draft.username} minLength={3} maxLength={20} onChange={(event) => setDraft({ ...draft, username: event.target.value })} autoComplete="username" required /></div>
               </div>
-              <div className="space-y-2"><Label htmlFor="profile-email">Email address</Label><Input id="profile-email" type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} autoComplete="email" required /></div>
-              <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="profile-bio">Bio</Label><span className="text-xs text-muted-foreground">{draft.bio.length}/280</span></div><Textarea id="profile-bio" value={draft.bio} maxLength={280} onChange={(event) => setDraft({ ...draft, bio: event.target.value })} placeholder="A short note about you, your goals, or what you use Life Stack for." /></div>
-              <div className="flex justify-end border-t pt-5"><Button type="submit" disabled={isSaving}><Save />{isSaving ? "Saving…" : "Save profile"}</Button></div>
+              <div className="space-y-2"><Label htmlFor="profile-email">{t("profile.email")}</Label><Input id="profile-email" type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} autoComplete="email" required /></div>
+              <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="profile-bio">{t("profile.bio")}</Label><span className="text-xs text-muted-foreground">{draft.bio.length}/280</span></div><Textarea id="profile-bio" value={draft.bio} maxLength={280} onChange={(event) => setDraft({ ...draft, bio: event.target.value })} placeholder={t("profile.bioPlaceholder")} /></div>
+              <div className="flex justify-end border-t pt-5"><Button type="submit" disabled={isSaving}><Save />{isSaving ? t("profile.saving") : t("profile.save")}</Button></div>
             </form>
           </CardContent>
         </Card>

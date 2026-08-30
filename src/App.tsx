@@ -1,21 +1,30 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Routes, Route } from 'react-router'
 import './App.css'
 import { ApplicationShell1 } from './components/application-shell1'
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth-route'
-import Dashboard from './pages/Dashboard'
-import Expenses from './pages/Expenses'
-import Login from './pages/Login'
-import Profile from './pages/Profile'
-import Movies from './pages/Movies'
-import RecurringExpenses from './pages/RecurringExpenses'
-import Todos from './pages/Todos'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Expenses = lazy(() => import('./pages/Expenses'))
+const Login = lazy(() => import('./pages/Login'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Movies = lazy(() => import('./pages/Movies'))
+const RecurringExpenses = lazy(() => import('./pages/RecurringExpenses'))
+const Todos = lazy(() => import('./pages/Todos'))
+const BusinessHub = lazy(() => import('./pages/Business'))
+const Settings = lazy(() => import('./pages/Settings'))
+
+function RouteFallback() {
+  return <div className="min-h-32 animate-pulse rounded-xl bg-muted/50" aria-hidden="true" />
+}
 
 function App() {
 
 
   return (
     <>
-      <Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<Login />} />
@@ -24,6 +33,7 @@ function App() {
           <Route element={<ApplicationShell1 className="min-h-svh" />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/todos" element={<Todos />} />
             <Route path="/todos/today" element={<Todos />} />
             <Route path="/todos/completed" element={<Todos />} />
@@ -35,10 +45,14 @@ function App() {
             <Route path="/movies/want-to-watch" element={<Movies />} />
             <Route path="/movies/watched" element={<Movies />} />
             <Route path="/movies/suggestions" element={<Movies />} />
+            <Route path="/business" element={<BusinessHub />} />
+            <Route path="/business/clients" element={<BusinessHub />} />
+            <Route path="/business/invoices" element={<BusinessHub />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </>
   )
 }

@@ -2,6 +2,12 @@
 
 ## Later
 
+### Statutory invoice delivery
+
+- [ ] Connect Gazd Systems to NAV Online Számla 3.0 using encrypted technical-user credentials, submission retries, and acceptance polling.
+- [ ] Generate and validate EN 16931/XRechnung or an eligible hybrid e-invoice for applicable Gavod Gebäudeservice B2B invoices.
+- [ ] Add outbound invoice email delivery and retain a delivery audit trail.
+
 ### AI movie recommendations
 
 - [x] Recommend a movie from the user's 10 most recently rated films; do not include want-to-watch items without a rating.

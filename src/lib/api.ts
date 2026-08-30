@@ -7,9 +7,12 @@ export type UserProfile = {
   display_name: string | null
   bio: string | null
   has_avatar: boolean
+  preferred_language: AppLanguage
   created_at?: string
   updated_at?: string
 }
+
+export type AppLanguage = "en" | "de" | "hu"
 
 export type ProfileInput = Pick<UserProfile, "username" | "email" | "display_name" | "bio">
 
@@ -160,6 +163,157 @@ export type MovieRecommendationsResponse = {
   recommendations: MovieRecommendation[]
 }
 
+export type Jurisdiction = "DE" | "HU"
+export type InvoiceCurrency = "EUR" | "HUF"
+export type InvoiceLanguage = "DE" | "HU" | "EN"
+export type ClientType = "BUSINESS" | "PRIVATE"
+export type InvoiceStatus = "DRAFT" | "ISSUED" | "PARTIALLY_PAID" | "PAID" | "CREDITED" | "CANCELLED"
+export type InvoiceDisplayStatus = InvoiceStatus | "OVERDUE"
+export type ComplianceStatus = "NOT_READY" | "NOT_REQUIRED" | "PENDING" | "SUBMITTED" | "ACCEPTED" | "REJECTED"
+
+export type Business = {
+  id: number
+  legal_name: string
+  jurisdiction: Jurisdiction
+  tax_number: string | null
+  vat_id: string | null
+  registration_number: string | null
+  address_line1: string | null
+  address_line2: string | null
+  postal_code: string | null
+  city: string | null
+  country_code: string
+  email: string | null
+  phone: string | null
+  website: string | null
+  bank_name: string | null
+  iban: string | null
+  bic: string | null
+  default_currency: InvoiceCurrency
+  default_language: InvoiceLanguage
+  invoice_prefix: string
+  next_invoice_number: number
+  invoice_number_year: number
+  default_payment_terms_days: number
+  tax_exemption_note: string | null
+  invoice_accent_color: string
+  invoice_footer: string | null
+  invoice_template: "MODERN" | "CLASSIC"
+  invoice_thank_you: string | null
+  logo_asset_id: number | null
+  signature_asset_id: number | null
+  created_at: string
+  updated_at: string
+}
+
+export type BusinessInput = Omit<Business, "id" | "next_invoice_number" | "invoice_number_year" | "logo_asset_id" | "signature_asset_id" | "created_at" | "updated_at">
+
+export type Client = {
+  id: number
+  business_id: number
+  name: string
+  client_type: ClientType
+  segment: string
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  tax_number: string | null
+  vat_id: string | null
+  address_line1: string | null
+  address_line2: string | null
+  postal_code: string | null
+  city: string | null
+  country_code: string
+  notes: string | null
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ClientInput = Omit<Client, "id" | "created_at" | "updated_at">
+
+export type InvoiceItemInput = {
+  description: string
+  quantity: string | number
+  unit: string
+  unit_price: string | number
+  tax_rate: string | number
+}
+
+export type InvoiceItem = InvoiceItemInput & {
+  id: number
+  invoice_id: number
+  net_total: string | number
+  tax_total: string | number
+  gross_total: string | number
+  sort_order: number
+}
+
+export type InvoicePayment = {
+  id: number
+  invoice_id: number
+  amount: string | number
+  payment_date: string
+  payment_method: "BANK_TRANSFER" | "CASH" | "CARD" | "OTHER"
+  reference: string | null
+  notes: string | null
+  created_at: string
+}
+
+export type InvoicePaymentInput = Omit<InvoicePayment, "id" | "invoice_id" | "created_at">
+
+export type InvoiceInput = {
+  business_id: number
+  client_id: number
+  currency: InvoiceCurrency
+  language: InvoiceLanguage
+  issue_date: string
+  service_date: string
+  due_date: string
+  notes: string | null
+  items: InvoiceItemInput[]
+}
+
+export type InvoiceSummary = {
+  id: number
+  business_id: number
+  business_name: string
+  jurisdiction: Jurisdiction
+  client_id: number
+  client_name: string
+  segment: string
+  original_invoice_id: number | null
+  invoice_type: "INVOICE" | "CREDIT_NOTE"
+  invoice_number: string | null
+  status: InvoiceStatus
+  display_status: InvoiceDisplayStatus
+  compliance_status: ComplianceStatus
+  currency: InvoiceCurrency
+  language: InvoiceLanguage
+  issue_date: string
+  service_date: string
+  due_date: string
+  subtotal: string | number
+  tax_total: string | number
+  total: string | number
+  amount_paid: string | number
+  balance_due: string | number
+  notes: string | null
+  correction_reason: string | null
+  issued_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type Invoice = InvoiceSummary & {
+  items: InvoiceItem[]
+  payments: InvoicePayment[]
+  business: Business
+  client: Client
+  seller_snapshot: Record<string, unknown> | null
+  client_snapshot: Record<string, unknown> | null
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -198,7 +352,16 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 async function apiBlobRequest(path: string): Promise<Blob> {
   const response = await authenticatedFetch(path)
-  if (!response.ok) throw new ApiError("Could not load the profile picture.", response.status)
+  if (!response.ok) {
+    let message = "Could not download the file."
+    try {
+      const body = (await response.json()) as { detail?: string }
+      if (body.detail) message = body.detail
+    } catch {
+      // Keep the fallback for a non-JSON response.
+    }
+    throw new ApiError(message, response.status)
+  }
   return response.blob()
 }
 
@@ -217,6 +380,13 @@ export const api = {
     getAvatar: () => apiBlobRequest("/auth/profile/avatar"),
     deleteAvatar: () =>
       apiRequest<UserProfile>("/auth/profile/avatar", { method: "DELETE" }),
+  },
+  settings: {
+    updateLanguage: (preferredLanguage: AppLanguage) =>
+      apiRequest<UserProfile>("/auth/settings", {
+        method: "PUT",
+        body: JSON.stringify({ preferred_language: preferredLanguage }),
+      }),
   },
   todos: {
     list: () => apiRequest<Todo[]>("/todos/"),
@@ -292,6 +462,44 @@ export const api = {
       }),
     delete: (id: number) =>
       apiRequest<{ message: string; id: number }>(`/movies/${id}`, { method: "DELETE" }),
+  },
+  businesses: {
+    list: () => apiRequest<Business[]>("/businesses/"),
+    create: (input: BusinessInput) => apiRequest<Business>("/businesses/", { method: "POST", body: JSON.stringify(input) }),
+    update: (id: number, input: BusinessInput) => apiRequest<Business>(`/businesses/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+    delete: (id: number) => apiRequest<{ message: string; id: number; legal_name: string }>(`/businesses/${id}`, { method: "DELETE" }),
+    uploadLogo: (id: number, file: File) => {
+      const body = new FormData()
+      body.append("logo", file)
+      return apiRequest<Business>(`/businesses/${id}/logo`, { method: "POST", body })
+    },
+    getLogo: (id: number) => apiBlobRequest(`/businesses/${id}/logo`),
+    deleteLogo: (id: number) => apiRequest<Business>(`/businesses/${id}/logo`, { method: "DELETE" }),
+    uploadSignature: (id: number, file: File) => {
+      const body = new FormData()
+      body.append("signature", file)
+      return apiRequest<Business>(`/businesses/${id}/signature`, { method: "POST", body })
+    },
+    getSignature: (id: number) => apiBlobRequest(`/businesses/${id}/signature`),
+    deleteSignature: (id: number) => apiRequest<Business>(`/businesses/${id}/signature`, { method: "DELETE" }),
+  },
+  clients: {
+    list: (businessId?: number) => apiRequest<Client[]>(`/clients/${businessId ? `?business_id=${businessId}` : ""}`),
+    create: (input: ClientInput) => apiRequest<Client>("/clients/", { method: "POST", body: JSON.stringify(input) }),
+    update: (id: number, input: ClientInput) => apiRequest<Client>(`/clients/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+    delete: (id: number) => apiRequest<{ message: string; id: number }>(`/clients/${id}`, { method: "DELETE" }),
+  },
+  invoices: {
+    list: (businessId?: number) => apiRequest<InvoiceSummary[]>(`/invoices/${businessId ? `?business_id=${businessId}` : ""}`),
+    get: (id: number) => apiRequest<Invoice>(`/invoices/${id}`),
+    create: (input: InvoiceInput) => apiRequest<Invoice>("/invoices/", { method: "POST", body: JSON.stringify(input) }),
+    update: (id: number, input: InvoiceInput) => apiRequest<Invoice>(`/invoices/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+    delete: (id: number) => apiRequest<{ message: string; id: number }>(`/invoices/${id}`, { method: "DELETE" }),
+    issue: (id: number) => apiRequest<Invoice>(`/invoices/${id}/issue`, { method: "POST" }),
+    addPayment: (id: number, input: InvoicePaymentInput) => apiRequest<Invoice>(`/invoices/${id}/payments`, { method: "POST", body: JSON.stringify(input) }),
+    deletePayment: (id: number, paymentId: number) => apiRequest<Invoice>(`/invoices/${id}/payments/${paymentId}`, { method: "DELETE" }),
+    credit: (id: number, reason: string) => apiRequest<Invoice>(`/invoices/${id}/credit`, { method: "POST", body: JSON.stringify({ reason }) }),
+    downloadPdf: (id: number) => apiBlobRequest(`/invoices/${id}/pdf`),
   },
 }
 

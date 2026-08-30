@@ -12,6 +12,7 @@ import {
   FieldLabel,
 } from "src/components/ui/field"
 import { Input } from "src/components/ui/input"
+import { useTranslation } from "react-i18next"
 
 type FormErrors = {
   username?: string
@@ -26,6 +27,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { establishSession } = useAuth()
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -40,11 +42,11 @@ export function LoginForm({
     const nextErrors: FormErrors = {}
 
     if (!username) {
-      nextErrors.username = "Enter your username."
+      nextErrors.username = t("login.usernameRequired")
     }
 
     if (!password) {
-      nextErrors.password = "Enter your password."
+      nextErrors.password = t("login.passwordRequired")
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -64,24 +66,31 @@ export function LoginForm({
       })
 
       if (response.status === 401 || response.status === 403) {
-        setErrors({ form: "The email or password you entered is incorrect." })
+        setErrors({ form: t("login.invalidCredentials") })
+        return
+      }
+
+      if (response.status === 429) {
+        const seconds = Number(response.headers.get("Retry-After") ?? 60)
+        const minutes = Math.max(1, Math.ceil(seconds / 60))
+        setErrors({ form: t("login.rateLimited", { count: minutes }) })
         return
       }
 
       if (!response.ok) {
-        setErrors({ form: "We couldn't log you in right now. Please try again." })
+        setErrors({ form: t("login.unavailable") })
         return
       }
 
       if (!(await establishSession())) {
-        setErrors({ form: "Your session could not be started. Please try again." })
+        setErrors({ form: t("login.sessionFailed") })
         return
       }
 
       navigate("/dashboard", { replace: true })
     } catch {
       setErrors({
-        form: "We couldn't reach the server. Check your connection and try again.",
+        form: t("login.connectionFailed"),
       })
     } finally {
       setIsSubmitting(false)
@@ -99,18 +108,18 @@ export function LoginForm({
           >
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome back</h1>
+                <h1 className="text-2xl font-bold">{t("login.welcome")}</h1>
                 <p className="text-balance text-muted-foreground">
-                 Hi, there! Balázs login to your Life Stack OS.
+                  {t("login.subtitle")}
                 </p>
               </div>
               <Field data-invalid={Boolean(errors.username)}>
-                <FieldLabel htmlFor="username">Username</FieldLabel>
+                <FieldLabel htmlFor="username">{t("login.username")}</FieldLabel>
                 <Input
                   id="username"
                   name="username"
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder={t("login.usernamePlaceholder")}
                   autoComplete="username"
                   disabled={isSubmitting}
                   aria-invalid={Boolean(errors.username)}
@@ -121,15 +130,7 @@ export function LoginForm({
                 <FieldError id="username-error">{errors.username}</FieldError>
               </Field>
               <Field data-invalid={Boolean(errors.password)}>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
+                <FieldLabel htmlFor="password">{t("login.password")}</FieldLabel>
                 <div className="relative">
                   <Input
                     id="password"
@@ -147,7 +148,7 @@ export function LoginForm({
                     type="button"
                     onClick={() => setIsPasswordVisible((visible) => !visible)}
                     className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                    aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                    aria-label={isPasswordVisible ? t("login.hidePassword") : t("login.showPassword")}
                     aria-pressed={isPasswordVisible}
                     disabled={isSubmitting}
                   >
@@ -170,7 +171,7 @@ export function LoginForm({
                   {isSubmitting && (
                     <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                   )}
-                  {isSubmitting ? "Logging in…" : "Login"}
+                  {isSubmitting ? t("login.submitting") : t("login.submit")}
                 </Button>
               </Field>
 
@@ -181,7 +182,7 @@ export function LoginForm({
           <div className="relative hidden bg-muted md:block h-full">
             <img
               src="/images/life-stack-os-login.jpg"
-              alt="Image"
+              alt={t("login.imageAlt")}
               className="absolute inset-0 h-full w-full object-cover object-top dark:brightness-[0.2] dark:grayscale"
             />
           </div>
