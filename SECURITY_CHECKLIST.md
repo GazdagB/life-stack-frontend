@@ -60,12 +60,14 @@ the gateway and Life Stack authentication before reaching private data.
 - [x] Successful login clears the applicable failed-login counters.
 - [x] Public registration is disabled by default.
 - [x] Password input supports show/hide without storing the password.
-- [ ] Raise the single-factor password minimum from 12 to 15 characters, while
+- [x] Raise the single-factor password minimum from 12 to 15 characters, while
   continuing to allow long passphrases and avoiding arbitrary composition rules.
 - [ ] Check new passwords against a compromised/common-password blocklist.
 - [ ] Add MFA or passkeys. For only two users, passkeys are preferable to SMS OTP.
 - [ ] Require recent re-authentication before changing email, password, MFA,
   recovery settings, or other security-sensitive account attributes.
+- [x] Require the current password and apply persistent account/IP throttling
+  before changing the password.
 - [ ] Design a recovery procedure that cannot be triggered using security
   questions or email alone; document who can perform recovery.
 - [ ] Add notification for password, email, MFA, and recovery changes.
@@ -78,11 +80,15 @@ the gateway and Life Stack authentication before reaching private data.
 - [x] Production configuration requires `Secure` cookies.
 - [x] Access tokens expire after 60 minutes.
 - [x] Access tokens require issuer, audience, subject, issued-at, and expiry claims.
+- [x] Access tokens are bound to a server-side refresh-session family so device
+  revocation invalidates API access immediately.
 - [x] Refresh tokens are random, stored only as hashes, rotated on refresh, and
   revoked on logout.
 - [x] Refresh sessions have both a 7-day idle limit and a 30-day absolute limit.
-- [ ] Add an account page listing active devices/sessions with “revoke” and
+- [x] Add an account page listing active devices/sessions with “revoke” and
   “revoke all other sessions” actions.
+- [x] Assign a random `HttpOnly` browser-profile identifier and keep at most one
+  active session per account and recognized browser profile without fingerprinting.
 - [ ] Revoke all sessions after password reset, suspected compromise, or account
   recovery.
 - [ ] Record and alert on refresh-token replay/reuse rather than treating it only

@@ -3,6 +3,7 @@ import { Check, Globe2, LoaderCircle, Languages } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "src/components/page-header"
+import { SecuritySettings } from "src/components/security-settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
 import { api } from "src/lib/api"
 import { useAuth } from "src/lib/auth"
@@ -102,6 +103,8 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <SecuritySettings />
     </>
   )
 }

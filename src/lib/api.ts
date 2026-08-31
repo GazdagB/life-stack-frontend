@@ -16,6 +16,16 @@ export type AppLanguage = "en" | "de" | "hu"
 
 export type ProfileInput = Pick<UserProfile, "username" | "email" | "display_name" | "bio">
 
+export type AuthSession = {
+  family_id: string
+  expires_at: string
+  last_used_at: string
+  created_at: string
+  user_agent: string | null
+  is_current: boolean
+  is_recognized_device: boolean
+}
+
 export type TodoStatus = "not_started" | "in_progress" | "completed" | "canceled"
 export type TodoPriority = "P1" | "P2" | "P3" | "P4" | "P5"
 
@@ -386,6 +396,20 @@ export const api = {
       apiRequest<UserProfile>("/auth/settings", {
         method: "PUT",
         body: JSON.stringify({ preferred_language: preferredLanguage }),
+      }),
+    listSessions: () => apiRequest<AuthSession[]>("/auth/sessions"),
+    revokeSession: (familyId: string) =>
+      apiRequest<{ message: string; current_session_revoked: boolean }>(`/auth/sessions/${familyId}`, {
+        method: "DELETE",
+      }),
+    revokeOtherSessions: () =>
+      apiRequest<{ message: string; revoked_count: number }>("/auth/sessions/revoke-others", {
+        method: "POST",
+      }),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      apiRequest<{ message: string; revoked_sessions: number }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       }),
   },
   todos: {
