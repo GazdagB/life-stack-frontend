@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Check, Globe2, LoaderCircle, Languages } from "lucide-react"
+import { Check, Globe2, LoaderCircle, Languages, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "src/components/page-header"
@@ -51,6 +51,7 @@ export default function Settings() {
   return (
     <>
       <PageHeader
+        icon={Settings2}
         eyebrow={t("settings.eyebrow")}
         title={t("settings.title")}
         description={t("settings.description")}

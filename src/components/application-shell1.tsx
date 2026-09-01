@@ -10,6 +10,7 @@ import {
   Clapperboard,
   LayoutDashboard,
   Landmark,
+  Download,
   ListTodo,
   LogOut,
   Repeat2,
@@ -109,6 +110,8 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
           { labelKey: "nav.recurring", href: "/expenses/recurring", icon: Repeat2 },
           { labelKey: "nav.coveragePlan", href: "/expenses/coverage", icon: Calculator },
           { labelKey: "nav.spendingOverview", href: "/expenses/overview", icon: TrendingUp },
+          { labelKey: "nav.bankAccounts", href: "/expenses/bank-accounts", icon: Landmark },
+          { labelKey: "nav.importInbox", href: "/expenses/import", icon: Download },
         ],
       },
       {
@@ -143,24 +146,27 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
   },
 ]
 
-const pageNames: Record<string, [string, string]> = {
-  "/dashboard": ["nav.groups.home", "nav.dashboard"],
-  "/profile": ["account.myAccount", "nav.profile"],
-  "/settings": ["account.myAccount", "nav.settings"],
-  "/todos": ["nav.tasks", "nav.allTasks"],
-  "/todos/today": ["nav.tasks", "nav.today"],
-  "/todos/completed": ["nav.tasks", "nav.completed"],
-  "/expenses": ["nav.expenses", "nav.allExpenses"],
-  "/expenses/recurring": ["nav.expenses", "nav.recurring"],
-  "/expenses/coverage": ["nav.expenses", "nav.coveragePlan"],
-  "/expenses/overview": ["nav.expenses", "nav.spendingOverview"],
-  "/movies": ["nav.movies", "nav.discover"],
-  "/movies/want-to-watch": ["nav.movies", "nav.wantToWatch"],
-  "/movies/watched": ["nav.movies", "nav.watchedRated"],
-  "/movies/suggestions": ["nav.movies", "nav.aiSuggestions"],
-  "/business": ["nav.business", "nav.overview"],
-  "/business/clients": ["nav.business", "nav.clients"],
-  "/business/invoices": ["nav.business", "nav.invoices"],
+const pageNames: Record<string, [string, string, IconType]> = {
+  "/dashboard": ["nav.groups.home", "nav.dashboard", LayoutDashboard],
+  "/profile": ["account.myAccount", "nav.profile", User],
+  "/settings": ["account.myAccount", "nav.settings", Settings2],
+  "/todos": ["nav.tasks", "nav.allTasks", ListTodo],
+  "/todos/today": ["nav.tasks", "nav.today", Sparkles],
+  "/todos/completed": ["nav.tasks", "nav.completed", CheckCircle2],
+  "/expenses": ["nav.expenses", "nav.allExpenses", CircleDollarSign],
+  "/expenses/recurring": ["nav.expenses", "nav.recurring", Repeat2],
+  "/expenses/coverage": ["nav.expenses", "nav.coveragePlan", Calculator],
+  "/expenses/overview": ["nav.expenses", "nav.spendingOverview", TrendingUp],
+  "/expenses/bank-accounts": ["nav.expenses", "nav.bankAccounts", Landmark],
+  "/expenses/bank-accounts/callback": ["nav.expenses", "nav.bankAccounts", Landmark],
+  "/expenses/import": ["nav.expenses", "nav.importInbox", Download],
+  "/movies": ["nav.movies", "nav.discover", Search],
+  "/movies/want-to-watch": ["nav.movies", "nav.wantToWatch", Bookmark],
+  "/movies/watched": ["nav.movies", "nav.watchedRated", Star],
+  "/movies/suggestions": ["nav.movies", "nav.aiSuggestions", Sparkles],
+  "/business": ["nav.business", "nav.overview", Landmark],
+  "/business/clients": ["nav.business", "nav.clients", Users],
+  "/business/invoices": ["nav.business", "nav.invoices", FileText],
 }
 
 function Brand() {
@@ -170,7 +176,7 @@ function Brand() {
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
           <NavLink to="/dashboard">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-foreground text-background shadow-sm">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-foreground text-background">
               <Sparkles className="size-4" />
             </div>
             <div className="grid flex-1 text-left leading-tight">
@@ -194,7 +200,7 @@ function NavigationItem({ item }: { item: NavItem }) {
   if (!hasChildren) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton asChild isActive={isSectionActive}>
+        <SidebarMenuButton asChild isActive={isSectionActive} tooltip={t(item.labelKey)} className="data-active:[&>svg]:text-primary">
           <NavLink to={item.href} end={item.exact}>
             <Icon className="size-4" />
             <span>{t(item.labelKey)}</span>
@@ -208,7 +214,7 @@ function NavigationItem({ item }: { item: NavItem }) {
     <Collapsible asChild defaultOpen={isSectionActive} className="group/collapsible">
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton isActive={isSectionActive}>
+          <SidebarMenuButton isActive={isSectionActive} tooltip={t(item.labelKey)} className="data-active:[&>svg]:text-primary">
             <Icon className="size-4" />
             <span>{t(item.labelKey)}</span>
             <ChevronRight className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -221,7 +227,7 @@ function NavigationItem({ item }: { item: NavItem }) {
               const isActive = location.pathname === child.href
               return (
                 <SidebarMenuSubItem key={child.href}>
-                  <SidebarMenuSubButton asChild isActive={isActive}>
+                  <SidebarMenuSubButton asChild isActive={isActive} className="data-active:bg-primary/10 data-active:font-medium data-active:text-primary">
                     <NavLink to={child.href} end>
                       <ChildIcon className="size-3.5" />
                       <span>{t(child.labelKey)}</span>
@@ -279,12 +285,12 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation()
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader><Brand /></SidebarHeader>
+      <SidebarHeader className="border-b border-sidebar-border/70 p-3"><Brand /></SidebarHeader>
       <SidebarContent>
         <ScrollArea className="min-h-0 flex-1">
           {navigation.map((group) => (
-            <SidebarGroup key={group.title}>
-              <SidebarGroupLabel>{t(group.title)}</SidebarGroupLabel>
+            <SidebarGroup key={group.title} className="px-3 py-2">
+              <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-[0.16em]">{t(group.title)}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => <NavigationItem key={item.href} item={item} />)}
@@ -294,7 +300,7 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           ))}
         </ScrollArea>
       </SidebarContent>
-      <SidebarFooter><UserMenu /></SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border/70 p-3"><UserMenu /></SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
@@ -303,25 +309,25 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 export function ApplicationShell1({ className }: { className?: string }) {
   const { t } = useTranslation()
   const location = useLocation()
-  const [sectionKey, pageKey] = pageNames[location.pathname] ?? ["nav.groups.home", "nav.dashboard"]
+  const [sectionKey, pageKey, PageIcon] = pageNames[location.pathname] ?? ["nav.groups.home", "nav.dashboard", LayoutDashboard]
 
   return (
-    <SidebarProvider className={cn("bg-muted/30", className)}>
+    <SidebarProvider className={cn("bg-sidebar", className)}>
       <AppSidebar />
-      <SidebarInset className="overflow-hidden shadow-sm">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16">
+      <SidebarInset className="overflow-hidden border border-border/70 shadow-sm">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card px-4 sm:h-16 sm:px-6">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden sm:block"><span className="text-muted-foreground">{t(sectionKey)}</span></BreadcrumbItem>
               <BreadcrumbSeparator className="hidden sm:block" />
-              <BreadcrumbItem><BreadcrumbPage>{t(pageKey)}</BreadcrumbPage></BreadcrumbItem>
+              <BreadcrumbItem><BreadcrumbPage className="flex items-center gap-2 font-semibold"><PageIcon className="size-4 text-primary" />{t(pageKey)}</BreadcrumbPage></BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </header>
         <main className="min-w-0 flex-1 overflow-auto">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:p-10">
             <Outlet />
           </div>
         </main>

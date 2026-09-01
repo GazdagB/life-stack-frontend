@@ -106,6 +106,7 @@ export default function Profile() {
   return (
     <>
       <PageHeader
+        icon={UserRound}
         eyebrow={t("profile.eyebrow")}
         title={t("profile.title")}
         description={t("profile.description")}

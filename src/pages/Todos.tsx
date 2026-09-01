@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Check, Circle, LoaderCircle, Plus, Search, Trash2, X } from "lucide-react"
+import { Check, Circle, ClipboardList, LoaderCircle, Plus, Search, Trash2, X } from "lucide-react"
 import { useLocation } from "react-router"
 import { useTranslation } from "react-i18next"
 
@@ -8,6 +8,7 @@ import { Badge } from "src/components/ui/badge"
 import { Button } from "src/components/ui/button"
 import { Card, CardContent } from "src/components/ui/card"
 import { Input } from "src/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "src/components/ui/select"
 import { Textarea } from "src/components/ui/textarea"
 import { api, type Todo, type TodoInput, type TodoPriority, type TodoStatus } from "src/lib/api"
 import { cn } from "src/lib/utils"
@@ -56,11 +57,11 @@ export default function Todos() {
 
   return (
     <>
-      <PageHeader eyebrow={t("todos.eyebrow")} title={titles[mode][0]} description={titles[mode][1]} action={<Button onClick={() => setShowForm((value) => !value)}>{showForm ? <X /> : <Plus />}{showForm ? t("todos.close") : t("todos.newTask")}</Button>} />
+      <PageHeader icon={ClipboardList} eyebrow={t("todos.eyebrow")} title={titles[mode][0]} description={titles[mode][1]} action={<Button onClick={() => setShowForm((value) => !value)}>{showForm ? <X /> : <Plus />}{showForm ? t("todos.close") : t("todos.newTask")}</Button>} />
       {showForm && (
         <Card><CardContent><form onSubmit={createTodo} className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
           <div className="space-y-2 lg:col-span-2"><label className="text-sm font-medium" htmlFor="todo-title">{t("todos.taskTitle")}</label><Input id="todo-title" value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder={t("todos.taskPlaceholder")} required /></div>
-          <div className="space-y-2 lg:row-span-2"><label className="text-sm font-medium" htmlFor="todo-priority">{t("todos.priority")}</label><select id="todo-priority" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as TodoPriority })}>{(["P1", "P2", "P3", "P4", "P5"] as const).map((priority) => <option key={priority}>{priority}</option>)}</select></div>
+          <div className="space-y-2 lg:row-span-2"><label className="text-sm font-medium" id="todo-priority-label">{t("todos.priority")}</label><Select value={draft.priority} onValueChange={(value) => setDraft({ ...draft, priority: value as TodoPriority })}><SelectTrigger aria-labelledby="todo-priority-label"><SelectValue /></SelectTrigger><SelectContent>{(["P1", "P2", "P3", "P4", "P5"] as const).map((priority) => <SelectItem key={priority} value={priority}>{priority}</SelectItem>)}</SelectContent></Select></div>
           <div className="space-y-2"><label className="text-sm font-medium" htmlFor="todo-description">{t("todos.description")}</label><Textarea id="todo-description" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder={t("todos.descriptionPlaceholder")} /></div>
           <div className="space-y-2"><label className="text-sm font-medium" htmlFor="todo-due-date">{t("todos.dueDate")}</label><Input id="todo-due-date" type="date" value={draft.due_date ?? ""} onChange={(event) => setDraft({ ...draft, due_date: event.target.value || null })} /></div>
           <div className="flex items-end lg:col-start-3"><Button type="submit" className="w-full" disabled={isSaving}>{isSaving && <LoaderCircle className="animate-spin" />}{t("todos.createTask")}</Button></div>

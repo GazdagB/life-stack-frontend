@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ArrowRight, CalendarCheck2, CircleDollarSign, ListChecks, WalletCards } from "lucide-react"
+import { ArrowRight, CalendarCheck2, CircleDollarSign, LayoutDashboard, ListChecks, WalletCards } from "lucide-react"
 import { Link } from "react-router"
 import { useTranslation } from "react-i18next"
 
@@ -45,6 +45,7 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
+        icon={LayoutDashboard}
         eyebrow={t("dashboard.eyebrow")}
         title={t("dashboard.welcome", { name: user?.display_name || user?.username || t("dashboard.fallbackName") })}
         description={t("dashboard.description")}

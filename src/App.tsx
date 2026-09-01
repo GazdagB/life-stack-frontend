@@ -13,6 +13,8 @@ const RecurringExpenses = lazy(() => import('./pages/RecurringExpenses'))
 const Todos = lazy(() => import('./pages/Todos'))
 const BusinessHub = lazy(() => import('./pages/Business'))
 const Settings = lazy(() => import('./pages/Settings'))
+const Banking = lazy(() => import('./pages/Banking'))
+const Legal = lazy(() => import('./pages/Legal'))
 
 function RouteFallback() {
   return <div className="min-h-32 animate-pulse rounded-xl bg-muted/50" aria-hidden="true" />
@@ -26,6 +28,8 @@ function App() {
       <Suspense fallback={<RouteFallback />}>
         <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/privacy" element={<Legal />} />
+        <Route path="/terms" element={<Legal />} />
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<Login />} />
         </Route>
@@ -41,6 +45,9 @@ function App() {
             <Route path="/expenses/recurring" element={<RecurringExpenses />} />
             <Route path="/expenses/coverage" element={<RecurringExpenses />} />
             <Route path="/expenses/overview" element={<Expenses />} />
+            <Route path="/expenses/bank-accounts" element={<Banking />} />
+            <Route path="/expenses/bank-accounts/callback" element={<Banking />} />
+            <Route path="/expenses/import" element={<Banking />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/movies/want-to-watch" element={<Movies />} />
             <Route path="/movies/watched" element={<Movies />} />

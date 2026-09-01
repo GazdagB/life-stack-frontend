@@ -10,6 +10,7 @@ import {
   Sparkles,
   Star,
   Trash2,
+  WandSparkles,
 } from "lucide-react"
 import { useLocation } from "react-router"
 import { useTranslation } from "react-i18next"
@@ -137,6 +138,10 @@ function MovieSheet({ details, movie, isLoading, onClose, onAdd, onUpdate, onDel
   })
   const [isSaving, setIsSaving] = React.useState(false)
   const [localError, setLocalError] = React.useState("")
+  const [isRewriteOpen, setIsRewriteOpen] = React.useState(false)
+  const [isRewriting, setIsRewriting] = React.useState(false)
+  const [rewriteSuggestion, setRewriteSuggestion] = React.useState("")
+  const [rewriteError, setRewriteError] = React.useState("")
   const item = movie ?? details
 
   async function run(action: () => Promise<void>) {
@@ -156,7 +161,31 @@ function MovieSheet({ details, movie, isLoading, onClose, onAdd, onUpdate, onDel
     }))
   }
 
+  async function requestRewrite(previousSuggestion?: string) {
+    const critique = draft.critique?.trim() ?? ""
+    if (critique.length < 3 || !item) return
+    setIsRewriteOpen(true)
+    setIsRewriting(true)
+    setRewriteError("")
+    if (!previousSuggestion) setRewriteSuggestion("")
+    try {
+      const response = await api.movies.rewriteCritique(critique, item.title, previousSuggestion)
+      setRewriteSuggestion(response.rewritten_critique)
+    } catch (reason) {
+      setRewriteError(reason instanceof Error ? reason.message : t("errors.rewrite"))
+    } finally {
+      setIsRewriting(false)
+    }
+  }
+
+  function acceptRewrite() {
+    if (!rewriteSuggestion) return
+    setDraft((current) => ({ ...current, critique: rewriteSuggestion }))
+    setIsRewriteOpen(false)
+  }
+
   return (
+    <>
     <Sheet open={Boolean(details || movie || isLoading)} onOpenChange={(open) => { if (!open) onClose() }}>
       <SheetContent className="overflow-y-auto sm:max-w-xl">
         {isLoading || !item ? (
@@ -209,7 +238,16 @@ function MovieSheet({ details, movie, isLoading, onClose, onAdd, onUpdate, onDel
                       <div className="space-y-2"><label className="text-sm font-medium" htmlFor="movie-watched-at">{t("watchedOn")}</label><Input id="movie-watched-at" type="date" max={today()} value={draft.watched_at ?? ""} onChange={(event) => setDraft({ ...draft, watched_at: event.target.value || null })} /></div>
                     </div>
                   )}
-                  <div className="space-y-2"><div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="movie-critique">{t("critique")}</label><span className="text-xs text-muted-foreground">{draft.critique?.length ?? 0}/2000</span></div><Textarea id="movie-critique" maxLength={2000} value={draft.critique ?? ""} onChange={(event) => setDraft({ ...draft, critique: event.target.value })} placeholder={t("critiquePlaceholder")} className="min-h-28" /></div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="movie-critique">{t("critique")}</label><span className="text-xs text-muted-foreground">{draft.critique?.length ?? 0}/2000</span></div>
+                    <Textarea id="movie-critique" maxLength={2000} value={draft.critique ?? ""} onChange={(event) => setDraft({ ...draft, critique: event.target.value })} placeholder={t("critiquePlaceholder")} className="min-h-28" />
+                    <div className="flex justify-end">
+                      <Button type="button" size="sm" variant="outline" disabled={(draft.critique?.trim().length ?? 0) < 3 || isRewriting} onClick={() => void requestRewrite()}>
+                        {isRewriting ? <LoaderCircle className="animate-spin" /> : <WandSparkles />}
+                        {t("enhanceWithAi")}
+                      </Button>
+                    </div>
+                  </div>
                   {localError && <p className="text-sm text-destructive">{localError}</p>}
                   <div className="flex justify-between gap-2"><Button type="button" variant="destructive" onClick={() => void run(onDelete)} disabled={isSaving}><Trash2 />{t("remove")}</Button><Button type="submit" disabled={isSaving}>{isSaving ? <LoaderCircle className="animate-spin" /> : <Check />}{isSaving ? t("saving") : t("saveChanges")}</Button></div>
                 </form>
@@ -228,6 +266,36 @@ function MovieSheet({ details, movie, isLoading, onClose, onAdd, onUpdate, onDel
         )}
       </SheetContent>
     </Sheet>
+    <Sheet open={isRewriteOpen} onOpenChange={setIsRewriteOpen}>
+      <SheetContent className="sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2"><WandSparkles className="size-4 text-primary" />{t("rewriteTitle")}</SheetTitle>
+          <SheetDescription>{t("rewriteDescription")}</SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 space-y-5 overflow-y-auto px-4">
+          <section className="space-y-2">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("yourOriginal")}</h3>
+            <p className="whitespace-pre-wrap rounded-lg border bg-muted/30 p-3 leading-6 text-muted-foreground">{draft.critique}</p>
+          </section>
+          <section className="space-y-2">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("aiSuggestion")}</h3>
+            <div className="min-h-32 rounded-lg border bg-card p-4 leading-6">
+              {isRewriting ? <div className="flex h-24 items-center justify-center gap-2 text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />{t("rewriting")}</div> : rewriteSuggestion ? <p className="whitespace-pre-wrap">{rewriteSuggestion}</p> : null}
+            </div>
+          </section>
+          {rewriteError && <p className="text-sm text-destructive">{rewriteError}</p>}
+          <p className="text-xs text-muted-foreground">{t("rewritePrivacy")}</p>
+        </div>
+        <SheetFooter className="border-t">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <Button type="button" variant="ghost" onClick={() => setIsRewriteOpen(false)}>{t("cancelRewrite")}</Button>
+            <Button type="button" variant="outline" disabled={isRewriting} onClick={() => void requestRewrite(rewriteSuggestion || undefined)}><RefreshCw />{t("rephrase")}</Button>
+            <Button type="button" disabled={isRewriting || !rewriteSuggestion} onClick={acceptRewrite}><Check />{t("acceptRewrite")}</Button>
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+    </>
   )
 }
 
@@ -324,7 +392,7 @@ export default function Movies() {
 
   return (
     <>
-      <PageHeader {...pageCopy} action={mode === "want" || mode === "watched" ? <div className="rounded-xl border bg-card px-4 py-2 text-sm"><span className="text-muted-foreground">{t("moviesCount", { count: visibleMovies.length })}</span></div> : undefined} />
+      <PageHeader icon={mode === "suggestions" ? Sparkles : mode === "want" ? Bookmark : mode === "watched" ? Star : Clapperboard} {...pageCopy} action={mode === "want" || mode === "watched" ? <div className="rounded-xl border bg-card/80 px-4 py-2 text-sm shadow-sm"><span className="text-muted-foreground">{t("moviesCount", { count: visibleMovies.length })}</span></div> : undefined} />
       {error && <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
 
       {mode === "suggestions" ? (

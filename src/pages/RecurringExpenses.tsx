@@ -12,6 +12,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Repeat2,
   ShieldAlert,
   Trash2,
   Unlock,
@@ -26,6 +27,7 @@ import { Badge } from "src/components/ui/badge"
 import { Button } from "src/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
 import { Input } from "src/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "src/components/ui/select"
 import { Textarea } from "src/components/ui/textarea"
 import {
   Sheet,
@@ -187,6 +189,7 @@ export default function RecurringExpenses() {
     return (
       <>
         <PageHeader
+          icon={Calculator}
           eyebrow={t("eyebrow")}
           title={t("coverageTitle")}
           description={t("coverageDescription")}
@@ -245,6 +248,7 @@ export default function RecurringExpenses() {
   return (
     <>
       <PageHeader
+        icon={Repeat2}
         eyebrow={t("eyebrow")}
         title={t("title")}
         description={t("description")}
@@ -376,14 +380,14 @@ function CommitmentSheet({
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-title">{t("vendor")}</label><Input id="edit-recurring-title" value={editDraft.title} onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })} required /></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-amount">{t("amount")}</label><Input id="edit-recurring-amount" type="number" min="0.01" step="0.01" value={editDraft.amount} onChange={(event) => setEditDraft({ ...editDraft, amount: event.target.value })} required /></div>
-              <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-frequency">{t("frequency")}</label><select id="edit-recurring-frequency" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.frequency} onChange={(event) => setEditDraft({ ...editDraft, frequency: event.target.value as RecurringFrequency })}>{(Object.keys(frequencyLabelKeys) as RecurringFrequency[]).map((frequency) => <option key={frequency} value={frequency}>{t(frequencyLabelKeys[frequency])}</option>)}</select></div>
+              <div className="space-y-2"><label className="text-sm font-medium" id="edit-recurring-frequency-label">{t("frequency")}</label><Select value={editDraft.frequency} onValueChange={(value) => setEditDraft({ ...editDraft, frequency: value as RecurringFrequency })}><SelectTrigger aria-labelledby="edit-recurring-frequency-label"><SelectValue /></SelectTrigger><SelectContent>{(Object.keys(frequencyLabelKeys) as RecurringFrequency[]).map((frequency) => <SelectItem key={frequency} value={frequency}>{t(frequencyLabelKeys[frequency])}</SelectItem>)}</SelectContent></Select></div>
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-start">{t("starts")}</label><Input id="edit-recurring-start" type="date" value={editDraft.start_date} onChange={(event) => setEditDraft({ ...editDraft, start_date: event.target.value })} required /></div>
               <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-end">{t("paymentsEnd")}</label><Input id="edit-recurring-end" type="date" min={editDraft.start_date} value={editDraft.end_date ?? ""} onChange={(event) => setEditDraft({ ...editDraft, end_date: event.target.value || null })} /></div>
             </div>
-            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-cancellation-difficulty">{t("cancellationDifficulty")}</label><select id="edit-cancellation-difficulty" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.cancellation_difficulty} onChange={(event) => { const value = event.target.value as CancellationDifficulty; const supportsDate = value === "NOTICE_REQUIRED" || value === "CONTRACT_LOCKED"; setEditDraft({ ...editDraft, cancellation_difficulty: value, cancellable_from: supportsDate ? editDraft.cancellable_from : null }) }}>{cancellationOptions.map((option) => <option key={option.value} value={option.value}>{t(option.labelKey)}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-sm font-medium" id="edit-cancellation-difficulty-label">{t("cancellationDifficulty")}</label><Select value={editDraft.cancellation_difficulty} onValueChange={(nextValue) => { const value = nextValue as CancellationDifficulty; const supportsDate = value === "NOTICE_REQUIRED" || value === "CONTRACT_LOCKED"; setEditDraft({ ...editDraft, cancellation_difficulty: value, cancellable_from: supportsDate ? editDraft.cancellable_from : null }) }}><SelectTrigger aria-labelledby="edit-cancellation-difficulty-label"><SelectValue /></SelectTrigger><SelectContent>{cancellationOptions.map((option) => <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>)}</SelectContent></Select></div>
             {(editDraft.cancellation_difficulty === "NOTICE_REQUIRED" || editDraft.cancellation_difficulty === "CONTRACT_LOCKED") && <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-cancellable-from">{t("earliestCancellationDate")}</label><Input id="edit-cancellable-from" type="date" min={editDraft.start_date} value={editDraft.cancellable_from ?? ""} onChange={(event) => setEditDraft({ ...editDraft, cancellable_from: event.target.value || null })} /><p className="text-xs text-muted-foreground">{t("editCancellationHelp")}</p></div>}
             <div className="space-y-2"><div className="flex items-center justify-between"><label className="text-sm font-medium" htmlFor="edit-cancellation-notes">{t("cancellationNotes")}</label><span className="text-xs text-muted-foreground">{editDraft.cancellation_notes?.length ?? 0}/280</span></div><Textarea id="edit-cancellation-notes" value={editDraft.cancellation_notes ?? ""} maxLength={280} onChange={(event) => setEditDraft({ ...editDraft, cancellation_notes: event.target.value || null })} placeholder={t("editCancellationPlaceholder")} /></div>
-            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="edit-recurring-category">{t("category")}</label><select id="edit-recurring-category" className="h-8 w-full rounded-lg border bg-background px-2.5 text-sm" value={editDraft.category_id} onChange={(event) => setEditDraft({ ...editDraft, category_id: Number(event.target.value) })}>{expenseCategoryOptions.map((option) => <option key={option.id} value={option.id}>{tCore(option.nameKey)}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-sm font-medium" id="edit-recurring-category-label">{t("category")}</label><Select value={String(editDraft.category_id)} onValueChange={(value) => setEditDraft({ ...editDraft, category_id: Number(value) })}><SelectTrigger aria-labelledby="edit-recurring-category-label"><SelectValue /></SelectTrigger><SelectContent>{expenseCategoryOptions.map((option) => <SelectItem key={option.id} value={String(option.id)}>{tCore(option.nameKey)}</SelectItem>)}</SelectContent></Select></div>
             <button type="button" onClick={() => setEditDraft({ ...editDraft, active: !editDraft.active })} className={cn("flex w-full items-center justify-between rounded-xl border p-3 text-left", editDraft.active ? "border-emerald-300 bg-emerald-50" : "bg-muted/40")}><span><span className="block text-sm font-medium">{t("activeCommitment")}</span><span className="text-xs text-muted-foreground">{t("activeHelp")}</span></span><Badge variant={editDraft.active ? "default" : "secondary"}>{editDraft.active ? t("active") : t("paused")}</Badge></button>
             <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={() => setIsEditing(false)}>{t("cancel")}</Button><Button type="submit" disabled={isSaving}>{isSaving && <LoaderCircle className="animate-spin" />}{t("saveChanges")}</Button></div>
           </form>

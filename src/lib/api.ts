@@ -112,6 +112,52 @@ export type RecurringCoverage = {
   commitments: RecurringCommitmentForecast[]
 }
 
+export type BankInstitution = {
+  name: string
+  country: "DE" | "HU"
+  logo: string | null
+  bic: string | null
+}
+
+export type BankAccount = {
+  id: number
+  connection_id: number
+  account_name: string | null
+  bank_name: string | null
+  iban_last4: string | null
+  currency: string
+  current_balance: string | number | null
+  balance_updated_at: string | null
+}
+
+export type BankConnection = {
+  id: number
+  institution_name: string
+  institution_country: "DE" | "HU"
+  psu_type: "personal" | "business"
+  status: "AUTHORIZED" | "EXPIRED" | "ERROR" | "DISCONNECTED"
+  consent_valid_until: string | null
+  last_synced_at: string | null
+  last_error: string | null
+  accounts: BankAccount[]
+}
+
+export type BankTransaction = {
+  id: number
+  direction: "DEBIT" | "CREDIT"
+  booking_status: "BOOKED" | "PENDING"
+  amount: string | number
+  currency: string
+  booking_date: string
+  merchant_name: string | null
+  description: string | null
+  suggested_category_id: number | null
+  import_status: "PENDING" | "IMPORTED" | "IGNORED"
+  account_name: string | null
+  bank_name: string | null
+  iban_last4: string | null
+}
+
 export type MovieListStatus = "WANT_TO_WATCH" | "WATCHED"
 
 export type ExternalMovieRating = {
@@ -171,6 +217,10 @@ export type MovieRecommendation = MovieDetails & {
 
 export type MovieRecommendationsResponse = {
   recommendations: MovieRecommendation[]
+}
+
+export type MovieCritiqueRewriteResponse = {
+  rewritten_critique: string
 }
 
 export type Jurisdiction = "DE" | "HU"
@@ -466,6 +516,34 @@ export const api = {
     delete: (id: number) =>
       apiRequest<{ message: string; id: number }>(`/recurring-expenses/${id}`, { method: "DELETE" }),
   },
+  banking: {
+    institutions: (country: "DE" | "HU", psuType: "personal" | "business") =>
+      apiRequest<BankInstitution[]>(`/banking/institutions?country=${country}&psu_type=${psuType}`),
+    connections: () => apiRequest<BankConnection[]>("/banking/connections"),
+    startConnection: (institutionName: string, country: "DE" | "HU", psuType: "personal" | "business") =>
+      apiRequest<{ connection_id: number; authorization_url: string }>("/banking/connections/start", {
+        method: "POST",
+        body: JSON.stringify({ institution_name: institutionName, country, psu_type: psuType }),
+      }),
+    completeConnection: (code: string, state: string) =>
+      apiRequest<{ connection_id: number; accounts_added: number }>("/banking/connections/complete", {
+        method: "POST",
+        body: JSON.stringify({ code, state }),
+      }),
+    sync: (connectionId: number) =>
+      apiRequest<{ new_transactions: number }>(`/banking/connections/${connectionId}/sync`, { method: "POST" }),
+    disconnect: (connectionId: number) =>
+      apiRequest<{ id: number; status: string }>(`/banking/connections/${connectionId}`, { method: "DELETE" }),
+    transactions: (status: "PENDING" | "IMPORTED" | "IGNORED" = "PENDING") =>
+      apiRequest<BankTransaction[]>(`/banking/transactions?status=${status}`),
+    importTransaction: (transactionId: number, categoryId: number) =>
+      apiRequest<Expense>(`/banking/transactions/${transactionId}/import`, {
+        method: "POST",
+        body: JSON.stringify({ category_id: categoryId }),
+      }),
+    ignoreTransaction: (transactionId: number) =>
+      apiRequest<{ id: number; status: string }>(`/banking/transactions/${transactionId}/ignore`, { method: "POST" }),
+  },
   movies: {
     search: (query: string, page = 1) =>
       apiRequest<MovieSearchResponse>(`/movies/search?q=${encodeURIComponent(query)}&page=${page}`),
@@ -474,6 +552,15 @@ export const api = {
     list: (status?: MovieListStatus) =>
       apiRequest<UserMovie[]>(`/movies/${status ? `?list_status=${status}` : ""}`),
     recommend: () => apiRequest<MovieRecommendationsResponse>("/movies/recommendations", { method: "POST" }),
+    rewriteCritique: (critique: string, movieTitle: string, previousSuggestion?: string) =>
+      apiRequest<MovieCritiqueRewriteResponse>("/movies/critique/rewrite", {
+        method: "POST",
+        body: JSON.stringify({
+          critique,
+          movie_title: movieTitle,
+          previous_suggestion: previousSuggestion || null,
+        }),
+      }),
     add: (imdbId: string, listStatus: MovieListStatus) =>
       apiRequest<UserMovie>("/movies/", {
         method: "POST",

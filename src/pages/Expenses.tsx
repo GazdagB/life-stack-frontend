@@ -65,6 +65,7 @@ export default function Expenses() {
   return (
     <>
       <PageHeader
+        icon={isOverview ? TrendingUp : CircleDollarSign}
         eyebrow={t("expenses.eyebrow")}
         title={isOverview ? t("expenses.overviewTitle") : t("expenses.allTitle")}
         description={isOverview ? t("expenses.overviewDescription") : t("expenses.allDescription")}
