@@ -192,6 +192,7 @@ export type MovieDetails = MovieSearchResult & {
 export type UserMovie = Omit<MovieDetails, "library_id" | "list_status"> & {
   id: number
   list_status: MovieListStatus
+  categories: string[]
   personal_rating: string | number | null
   critique: string | null
   watched_at: string | null
@@ -221,6 +222,28 @@ export type MovieRecommendationsResponse = {
 
 export type MovieCritiqueRewriteResponse = {
   rewritten_critique: string
+}
+
+export type MovieInsightSummary = Pick<
+  UserMovie,
+  "id" | "imdb_id" | "title" | "year" | "poster_url" | "runtime" | "personal_rating" | "watched_at" | "categories"
+>
+
+export type MovieSuperlative = {
+  value: string | number
+  movies: MovieInsightSummary[]
+}
+
+export type MovieInsights = {
+  total_watched: number
+  categories: Array<{ name: string; count: number }>
+  superlatives: {
+    longest: MovieSuperlative | null
+    highest_rated: MovieSuperlative | null
+    oldest_release: MovieSuperlative | null
+    newest_release: MovieSuperlative | null
+    recently_watched: MovieSuperlative | null
+  }
 }
 
 export type Jurisdiction = "DE" | "HU"
@@ -549,8 +572,14 @@ export const api = {
       apiRequest<MovieSearchResponse>(`/movies/search?q=${encodeURIComponent(query)}&page=${page}`),
     details: (imdbId: string) => apiRequest<MovieDetails>(`/movies/catalog/${imdbId}`),
     get: (id: number) => apiRequest<UserMovie>(`/movies/${id}`),
-    list: (status?: MovieListStatus) =>
-      apiRequest<UserMovie[]>(`/movies/${status ? `?list_status=${status}` : ""}`),
+    list: (status?: MovieListStatus, category?: string) => {
+      const params = new URLSearchParams()
+      if (status) params.set("list_status", status)
+      if (category) params.set("category", category)
+      const query = params.toString()
+      return apiRequest<UserMovie[]>(`/movies/${query ? `?${query}` : ""}`)
+    },
+    insights: () => apiRequest<MovieInsights>("/movies/insights"),
     recommend: () => apiRequest<MovieRecommendationsResponse>("/movies/recommendations", { method: "POST" }),
     rewriteCritique: (critique: string, movieTitle: string, previousSuggestion?: string) =>
       apiRequest<MovieCritiqueRewriteResponse>("/movies/critique/rewrite", {

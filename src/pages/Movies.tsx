@@ -3,13 +3,19 @@ import {
   Bookmark,
   Check,
   Clapperboard,
+  Clock,
+  Calendar,
+  CalendarCheck,
   Film,
+  History,
   LoaderCircle,
   RefreshCw,
   Search,
   Sparkles,
   Star,
+  Tags,
   Trash2,
+  Trophy,
   WandSparkles,
 } from "lucide-react"
 import { useLocation } from "react-router"
@@ -34,6 +40,7 @@ import {
   type ExternalMovieRating,
   type MovieDetails,
   type MovieListStatus,
+  type MovieInsights,
   type MovieRecommendation,
   type MovieSearchResult,
   type UserMovie,
@@ -114,6 +121,83 @@ function MovieGrid({ movies, onSelect }: { movies: UserMovie[]; onSelect: (movie
           </div>
         </button>
       ))}
+    </div>
+  )
+}
+
+type MovieInsightsPanelProps = {
+  insights: MovieInsights
+  selectedCategory: string | null
+  onCategoryChange: (category: string | null) => void
+  onSelect: (movieId: number) => void
+}
+
+function MovieInsightsPanel({ insights, selectedCategory, onCategoryChange, onSelect }: MovieInsightsPanelProps) {
+  const { t, i18n } = useTranslation("movies")
+  const statistics = [
+    ["longest", Clock, insights.superlatives.longest],
+    ["highestRated", Trophy, insights.superlatives.highest_rated],
+    ["oldestRelease", History, insights.superlatives.oldest_release],
+    ["newestRelease", Calendar, insights.superlatives.newest_release],
+    ["recentlyWatched", CalendarCheck, insights.superlatives.recently_watched],
+  ] as const
+  const availableStatistics = statistics.filter(([, , statistic]) => statistic !== null)
+
+  function formatValue(key: typeof statistics[number][0], value: string | number) {
+    if (key === "longest") return t("insights.minutes", { count: Number(value) })
+    if (key === "highestRated") return t("insights.rating", { rating: Number(value).toFixed(1) })
+    if (key === "recentlyWatched") {
+      return new Intl.DateTimeFormat(i18n.resolvedLanguage, { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`))
+    }
+    return String(value)
+  }
+
+  return (
+    <div className="space-y-4">
+      <section aria-labelledby="movie-statistics-title">
+        <div className="mb-3 flex items-center gap-2">
+          <Trophy className="size-4 text-amber-500" />
+          <h2 id="movie-statistics-title" className="font-semibold">{t("insights.title")}</h2>
+        </div>
+        {availableStatistics.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {availableStatistics.map(([key, Icon, statistic]) => {
+              if (!statistic) return null
+              const [winner] = statistic.movies
+              return (
+                <button key={key} type="button" onClick={() => onSelect(winner.id)} className="rounded-xl border bg-card p-4 text-left shadow-xs transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="rounded-lg bg-muted p-2"><Icon className="size-4 text-muted-foreground" /></div>
+                    <span className="text-sm font-semibold tabular-nums">{formatValue(key, statistic.value)}</span>
+                  </div>
+                  <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(`insights.${key}`)}</p>
+                  <p className="mt-1 truncate font-semibold" title={winner.title}>{winner.title}</p>
+                  {statistic.movies.length > 1 && <p className="mt-1 text-xs text-muted-foreground">{t("insights.tied", { count: statistic.movies.length })}</p>}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <Card className="border-dashed"><CardContent className="py-6 text-sm text-muted-foreground">{t("insights.missingMetadata")}</CardContent></Card>
+        )}
+      </section>
+
+      <section aria-labelledby="movie-categories-title" className="rounded-xl border bg-card/60 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Tags className="size-4 text-primary" />
+          <h2 id="movie-categories-title" className="font-semibold">{t("insights.categories")}</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant={selectedCategory === null ? "default" : "outline"} aria-pressed={selectedCategory === null} onClick={() => onCategoryChange(null)}>
+            {t("insights.all")} <span className="opacity-70">{insights.total_watched}</span>
+          </Button>
+          {insights.categories.map((category) => (
+            <Button key={category.name} type="button" size="sm" variant={selectedCategory === category.name ? "default" : "outline"} aria-pressed={selectedCategory === category.name} onClick={() => onCategoryChange(category.name)}>
+              {category.name} <span className="opacity-70">{category.count}</span>
+            </Button>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
@@ -314,6 +398,8 @@ export default function Movies() {
   const [selectedDetails, setSelectedDetails] = React.useState<MovieDetails | null>(null)
   const [selectedMovie, setSelectedMovie] = React.useState<UserMovie | null>(null)
   const [recommendations, setRecommendations] = React.useState<MovieRecommendation[]>([])
+  const [insights, setInsights] = React.useState<MovieInsights | null>(null)
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null)
   const [isRecommending, setIsRecommending] = React.useState(false)
   const [error, setError] = React.useState("")
 
@@ -322,12 +408,28 @@ export default function Movies() {
       .then(setMovies)
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : t("errors.load")))
       .finally(() => setIsLoading(false))
+    api.movies.insights().then(setInsights).catch(() => setInsights(null))
   }, [t])
 
-  const visibleMovies = movies.filter((movie) => mode === "want" ? movie.list_status === "WANT_TO_WATCH" : mode === "watched" ? movie.list_status === "WATCHED" : true)
+  const visibleMovies = movies.filter((movie) => {
+    if (mode === "want") return movie.list_status === "WANT_TO_WATCH"
+    if (mode === "watched") {
+      return movie.list_status === "WATCHED" && (
+        selectedCategory === null || movie.categories.some((category) => category.toLocaleLowerCase() === selectedCategory.toLocaleLowerCase())
+      )
+    }
+    return true
+  })
   const ratedMovieCount = movies.filter((movie) => movie.list_status === "WATCHED" && movie.personal_rating !== null).length
   const pageKey = mode === "want" ? "want" : mode === "watched" ? "watched" : mode === "suggestions" ? "suggestions" : "discover"
   const pageCopy = { eyebrow: t(`pages.${pageKey}.eyebrow`), title: t(`pages.${pageKey}.title`), description: t(`pages.${pageKey}.description`) }
+
+  async function refreshInsights() {
+    const updatedInsights = await api.movies.insights().catch(() => null)
+    if (!updatedInsights) return
+    setInsights(updatedInsights)
+    setSelectedCategory((current) => current && !updatedInsights.categories.some((category) => category.name === current) ? null : current)
+  }
 
   async function searchMovies(event: React.FormEvent) {
     event.preventDefault()
@@ -363,6 +465,7 @@ export default function Movies() {
     setRecommendations((current) => current.filter((movie) => movie.imdb_id !== created.imdb_id))
     setSelectedDetails(null)
     setSelectedMovie(created)
+    void refreshInsights()
   }
 
   async function updateMovie(input: UserMovieUpdate) {
@@ -371,6 +474,7 @@ export default function Movies() {
     setMovies((current) => current.map((movie) => movie.id === updated.id ? updated : movie))
     setResults((current) => current.map((result) => result.imdb_id === updated.imdb_id ? { ...result, list_status: updated.list_status } : result))
     setSelectedMovie(updated)
+    void refreshInsights()
   }
 
   async function deleteMovie() {
@@ -380,6 +484,7 @@ export default function Movies() {
     setMovies((current) => current.filter((movie) => movie.id !== deleted.id))
     setResults((current) => current.map((result) => result.imdb_id === deleted.imdb_id ? { ...result, library_id: null, list_status: null } : result))
     setSelectedMovie(null)
+    void refreshInsights()
   }
 
   async function generateRecommendation() {
@@ -502,6 +607,11 @@ export default function Movies() {
         </>
       ) : isLoading ? (
         <div className="flex min-h-64 items-center justify-center"><LoaderCircle className="size-7 animate-spin text-muted-foreground" /></div>
+      ) : mode === "watched" ? (
+        <>
+          {insights && <MovieInsightsPanel insights={insights} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} onSelect={(movieId) => { const movie = movies.find((item) => item.id === movieId); if (movie) setSelectedMovie(movie) }} />}
+          <MovieGrid movies={visibleMovies} onSelect={setSelectedMovie} />
+        </>
       ) : <MovieGrid movies={visibleMovies} onSelect={setSelectedMovie} />}
 
       <MovieSheet
