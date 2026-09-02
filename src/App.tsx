@@ -11,6 +11,7 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Movies = lazy(() => import('./pages/Movies'))
 const RecurringExpenses = lazy(() => import('./pages/RecurringExpenses'))
 const Todos = lazy(() => import('./pages/Todos'))
+const TodoAssistant = lazy(() => import('./pages/TodoAssistant'))
 const BusinessHub = lazy(() => import('./pages/Business'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Banking = lazy(() => import('./pages/Banking'))
@@ -42,6 +43,7 @@ function App() {
             <Route path="/todos" element={<Todos />} />
             <Route path="/todos/today" element={<Todos />} />
             <Route path="/todos/completed" element={<Todos />} />
+            <Route path="/todos/assistant" element={<TodoAssistant />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/expenses/recurring" element={<RecurringExpenses />} />
             <Route path="/expenses/coverage" element={<RecurringExpenses />} />

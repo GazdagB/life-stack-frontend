@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Calculator,
   Bookmark,
+  Bot,
   ChevronRight,
   ChevronsUpDown,
   CircleDollarSign,
@@ -100,6 +101,7 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
           { labelKey: "nav.allTasks", href: "/todos", icon: ListTodo },
           { labelKey: "nav.today", href: "/todos/today", icon: Sparkles },
           { labelKey: "nav.completed", href: "/todos/completed", icon: CheckCircle2 },
+          { labelKey: "nav.aiTaskAssistant", href: "/todos/assistant", icon: Bot },
         ],
       },
       {
@@ -160,6 +162,7 @@ const pageNames: Record<string, [string, string, IconType]> = {
   "/todos": ["nav.tasks", "nav.allTasks", ListTodo],
   "/todos/today": ["nav.tasks", "nav.today", Sparkles],
   "/todos/completed": ["nav.tasks", "nav.completed", CheckCircle2],
+  "/todos/assistant": ["nav.tasks", "nav.aiTaskAssistant", Bot],
   "/expenses": ["nav.expenses", "nav.allExpenses", CircleDollarSign],
   "/expenses/recurring": ["nav.expenses", "nav.recurring", Repeat2],
   "/expenses/coverage": ["nav.expenses", "nav.coveragePlan", Calculator],

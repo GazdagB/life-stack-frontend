@@ -48,6 +48,43 @@ export type TodoInput = Pick<
   "title" | "description" | "priority" | "status" | "due_date" | "sort_order" | "source"
 >
 
+export type TodoAIClassification =
+  | "FULLY_AI_ACTIONABLE"
+  | "PARTIALLY_AI_ACTIONABLE"
+  | "HUMAN_REQUIRED"
+
+export type TodoAISupportedAction =
+  | "DRAFT_TEXT"
+  | "CREATE_CHECKLIST"
+  | "SUMMARIZE"
+  | "TRANSLATE"
+  | "RESEARCH_PLAN"
+  | "GENERATE_PDF"
+
+export type TodoAIAssessment = {
+  id: number
+  todo_id: number
+  content_fingerprint: string
+  classification: TodoAIClassification
+  confidence: number
+  reason: string
+  ai_steps: string[]
+  human_steps: string[]
+  missing_information: string[]
+  supported_actions: TodoAISupportedAction[]
+  assessment_source: "AI" | "RULES"
+  model_name: string | null
+  is_stale: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type TodoAIAssessmentBatch = {
+  assessments: TodoAIAssessment[]
+  provider_status: "ai" | "partial" | "fallback" | "empty"
+  warning: string | null
+}
+
 export type Expense = {
   id: number
   title: string
@@ -535,6 +572,15 @@ export const api = {
   },
   todos: {
     list: () => apiRequest<Todo[]>("/todos/"),
+    assessments: async () => {
+      const result = await apiRequest<{ assessments: TodoAIAssessment[] }>("/todos/ai-assessments")
+      return result.assessments
+    },
+    assess: (todoIds: number[], language: AppLanguage) =>
+      apiRequest<TodoAIAssessmentBatch>("/todos/ai-assess", {
+        method: "POST",
+        body: JSON.stringify({ todo_ids: todoIds, language }),
+      }),
     create: async (input: TodoInput) => {
       const result = await apiRequest<Todo[] | Todo>("/todos/", {
         method: "POST",

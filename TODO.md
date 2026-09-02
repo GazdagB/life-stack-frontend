@@ -14,13 +14,15 @@
 
 ### Task assessment experience
 
-- [ ] Add an **AI Assistant** view under Tasks with an explicit “Assess my TODOs” action.
-- [ ] Display `Fully AI-actionable`, `AI can help`, and `Human action required` as distinct icon-and-text states that do not rely on colour alone.
-- [ ] Show confidence, a concise explanation, missing information, AI-capable steps, and human-required steps on every assessed task.
-- [ ] Add filters for assessment state, stale assessment, due date, and supported action type.
-- [ ] Make changed TODOs visibly stale until reassessed rather than silently showing an outdated decision.
+- [x] Add an **AI Assistant** view under Tasks with an explicit “Assess my TODOs” action.
+- [x] Display `Fully AI-actionable`, `AI can help`, and `Human action required` as distinct icon-and-text states that do not rely on colour alone.
+- [x] Show confidence, a concise explanation, missing information, AI-capable steps, and human-required steps on every assessed task.
+- [x] Add filters for assessment state and stale assessments.
+- [ ] Add filters for due date and possible AI preparation type.
+- [x] Make changed TODOs visibly stale until reassessed rather than silently showing an outdated decision.
 - [ ] Let users correct an assessment and explain why without automatically training on private text.
-- [ ] Provide empty, loading, partial-provider-failure, quota, and unavailable states.
+- [x] Provide empty, loading, and conservative provider-fallback states.
+- [ ] Add distinct quota and provider-unavailable retry states.
 
 ### Safe action and review flow
 
@@ -30,7 +32,7 @@
 - [ ] Provide regenerate, compare, accept, download, delete, and cancel controls.
 - [ ] Clearly separate completed AI work from remaining human work.
 - [ ] Never show an action as completed merely because a draft was generated.
-- [ ] Never provide automatic send, signature, payment, cancellation submission, or account-login controls without a separately reviewed integration.
+- [x] Never provide automatic send, signature, payment, cancellation submission, or account-login controls without a separately reviewed integration.
 
 ### Cancellation-letter MVP
 
@@ -43,11 +45,11 @@
 
 ### Accessibility, localization, and trust
 
-- [ ] Add every assistant label, explanation, warning, and document-flow message in English, German, and Hungarian.
+- [x] Add every implemented assessment label, explanation, and warning in English, German, and Hungarian.
 - [ ] Keep formal-letter content language separate from the application-interface language.
 - [ ] Make assessment cards, forms, draft comparison, and PDF preview keyboard accessible.
-- [ ] Explain which TODO fields are sent to the AI provider and that model storage is disabled.
-- [ ] Never render raw model output as HTML; use typed structured fields and escaped text.
+- [x] Explain which TODO fields are sent to the AI provider and that model storage is disabled.
+- [x] Never render raw model output as HTML; use typed structured fields and escaped text.
 - [ ] Add responsive desktop, tablet, and mobile layouts plus clear print/download feedback.
 
 ## Next: Socials workspace
