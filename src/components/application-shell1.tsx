@@ -235,7 +235,9 @@ function NavigationItem({ item }: { item: NavItem }) {
           <SidebarMenuSub>
             {item.children?.map((child) => {
               const ChildIcon = child.icon
-              const isActive = location.pathname === child.href
+              const isActive = location.pathname === child.href || (
+                child.href === "/todos/assistant" && location.pathname.startsWith("/todos/assistant/")
+              )
               return (
                 <SidebarMenuSubItem key={child.href}>
                   <SidebarMenuSubButton asChild isActive={isActive} className="data-active:bg-primary/10 data-active:font-medium data-active:text-primary">
@@ -320,7 +322,10 @@ function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 export function ApplicationShell1({ className }: { className?: string }) {
   const { t } = useTranslation()
   const location = useLocation()
-  const [sectionKey, pageKey, PageIcon] = pageNames[location.pathname] ?? ["nav.groups.home", "nav.dashboard", LayoutDashboard]
+  const dynamicPage = location.pathname.startsWith("/todos/assistant/")
+    ? ["nav.tasks", "nav.aiTaskAssistant", Bot] as [string, string, IconType]
+    : undefined
+  const [sectionKey, pageKey, PageIcon] = pageNames[location.pathname] ?? dynamicPage ?? ["nav.groups.home", "nav.dashboard", LayoutDashboard]
 
   return (
     <SidebarProvider className={cn("bg-sidebar", className)}>

@@ -26,22 +26,23 @@
 
 ### Safe action and review flow
 
-- [ ] Show only actions implemented by Life Stack, such as draft letter, improve text, create checklist, translate, summarise, or generate PDF.
-- [ ] Require a deliberate user click before preparing any AI action.
-- [ ] Show an editable draft and required-information checklist before PDF generation.
+- [x] Show the bounded preparation types supported by the guided AI work session, such as drafting, checklists, translation, summaries, research plans, and PDFs.
+- [x] Require a deliberate **Do your part** click before starting an AI work session.
+- [x] Show an editable draft and required-information questions before PDF generation.
 - [ ] Provide regenerate, compare, accept, download, delete, and cancel controls.
-- [ ] Clearly separate completed AI work from remaining human work.
-- [ ] Never show an action as completed merely because a draft was generated.
+- [x] Clearly separate completed AI work from remaining human work.
+- [x] Never show an action as completed merely because a draft was generated.
 - [x] Never provide automatic send, signature, payment, cancellation submission, or account-login controls without a separately reviewed integration.
 
 ### Cancellation-letter MVP
 
-- [ ] Add a guided German cancellation-letter flyout for tasks such as “Verdi subscription cancellation letter.”
-- [ ] Collect sender and recipient addresses, membership/contract number, requested cancellation date, and optional notes.
-- [ ] Preview the generated `Kündigungsschreiben` as editable text before creating the PDF.
-- [ ] Show a printable PDF preview with address window layout, subject, body, place/date, and blank handwritten-signature area.
-- [ ] Show the remaining human checklist: verify, print, sign, retain a copy, and send.
-- [ ] Allow the accepted PDF and draft to be downloaded or deleted from the task.
+- [x] Add a guided task chat for cases such as “Verdi subscription cancellation letter,” preloaded with the TODO and assessment.
+- [x] Ask for missing sender and recipient addresses, membership/contract reference, and requested cancellation timing before drafting.
+- [x] Preview the generated `Kündigungsschreiben` as editable text before creating the PDF.
+- [x] Generate a printable Unicode PDF with the accepted text and a blank handwritten-signature area.
+- [x] Show the remaining human checklist: verify, print, sign, retain a copy, and send.
+- [x] Allow the accepted draft to be copied and the PDF to be downloaded.
+- [ ] Add explicit work-session and generated-draft deletion controls.
 
 ### Accessibility, localization, and trust
 

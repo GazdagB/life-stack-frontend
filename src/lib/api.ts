@@ -85,6 +85,38 @@ export type TodoAIAssessmentBatch = {
   warning: string | null
 }
 
+export type TodoAIWorkPhase = "GATHERING_INFORMATION" | "WORKING" | "DRAFT_READY"
+
+export type TodoAIWorkMessage = {
+  id: number
+  role: "USER" | "ASSISTANT"
+  content: string
+  created_at: string
+}
+
+export type TodoAIWorkSession = {
+  id: number
+  todo_id: number
+  phase: TodoAIWorkPhase
+  questions: string[]
+  human_steps: string[]
+  deliverable_title: string | null
+  deliverable_content: string | null
+  model_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type TodoAIWorkBundle = {
+  todo: Pick<Todo, "id" | "title" | "description" | "due_date" | "status">
+  assessment: Pick<
+    TodoAIAssessment,
+    "classification" | "reason" | "ai_steps" | "human_steps" | "missing_information" | "supported_actions"
+  >
+  session: TodoAIWorkSession
+  messages: TodoAIWorkMessage[]
+}
+
 export type Expense = {
   id: number
   title: string
@@ -581,6 +613,23 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ todo_ids: todoIds, language }),
       }),
+    startWork: (id: number, language: AppLanguage) =>
+      apiRequest<TodoAIWorkBundle>(`/todos/${id}/ai-session`, {
+        method: "POST",
+        body: JSON.stringify({ language }),
+      }),
+    getWork: (id: number) => apiRequest<TodoAIWorkBundle>(`/todos/${id}/ai-session`),
+    sendWorkMessage: (id: number, content: string, language: AppLanguage) =>
+      apiRequest<TodoAIWorkBundle>(`/todos/${id}/ai-session/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content, language }),
+      }),
+    saveWorkDraft: (id: number, title: string, content: string) =>
+      apiRequest<TodoAIWorkBundle>(`/todos/${id}/ai-session/draft`, {
+        method: "PUT",
+        body: JSON.stringify({ title, content }),
+      }),
+    downloadWorkPdf: (id: number) => apiBlobRequest(`/todos/${id}/ai-session/pdf`),
     create: async (input: TodoInput) => {
       const result = await apiRequest<Todo[] | Todo>("/todos/", {
         method: "POST",

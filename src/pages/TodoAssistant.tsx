@@ -4,6 +4,7 @@ import {
   LoaderCircle, RefreshCw, ShieldCheck, Sparkles, UserCheck,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router"
 
 import { PageHeader } from "src/components/page-header"
 import { Badge } from "src/components/ui/badge"
@@ -212,6 +213,11 @@ export default function TodoAssistant() {
                 {!!assessment.missing_information.length && <StepList title={t("missing")} steps={assessment.missing_information} icon={Info} className="text-amber-700" />}
                 {!!assessment.supported_actions.length && (
                   <section><h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("availableActions")}</h3><div className="flex flex-wrap gap-2">{assessment.supported_actions.map((action) => { const ActionIcon = actionIcons[action]; return <Badge key={action} variant="secondary"><ActionIcon className="mr-1 size-3" />{t(`actions.${action}`)}</Badge> })}</div></section>
+                )}
+                {!!assessment.ai_steps.length && !assessment.is_stale && (
+                  <div className="flex justify-end border-t pt-4">
+                    <Button asChild><Link to={`/todos/assistant/${todo.id}`}><Bot />{t("doYourPart")}</Link></Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
