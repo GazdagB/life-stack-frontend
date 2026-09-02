@@ -121,6 +121,19 @@
 - [ ] Add NAV Online Számla status and retry views.
 - [ ] Add EN 16931/XRechnung validation and delivery status views.
 
+## Net worth tracking
+
+- [x] Add a top-level **Net worth** workspace separate from day-to-day expenses.
+- [x] Show total net worth, total assets, and total liabilities in clear summary cards.
+- [x] Add asset and liability management for cash, linked bank accounts, investments, property, vehicles, businesses, loans, credit cards, and custom items.
+- [x] Make linked balances visually distinct from manual valuations and prevent accidental double-counting.
+- [ ] Add monthly and all-time net-worth charts with asset-versus-liability breakdowns.
+- [ ] Add category, ownership, currency, liquidity, and data-source filters.
+- [x] Support daily valuation snapshots, editing, active/inactive state, and delete confirmation flows.
+- [ ] Explain stale valuations and show when each account or asset was last updated.
+- [x] Add responsive empty, loading, and per-currency states in English, German, and Hungarian.
+- [ ] Provide an accessible table alternative for every chart and locale-aware currency formatting.
+
 ## Longer-term product ideas
 
 - [ ] Income tracking and cash-flow forecasting.

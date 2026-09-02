@@ -28,6 +28,7 @@ The browser application for **Life Stack**, a private personal operating system 
 | Expenses | Add, describe, edit, inspect, delete, categorise, and chart one-time spending. |
 | Recurring commitments | Forecast active subscriptions, insurance, taxes, instalments, and other commitments across daily, weekly, monthly, and yearly views. |
 | Bank accounts | Connect supported German and Hungarian institutions through Enable Banking, synchronise read-only data, and review booked debits before importing them as expenses. |
+| Net worth | Track assets and liabilities, reuse linked bank balances, adjust for ownership, and chart historical valuation snapshots. |
 | Tasks | Track all, today, and completed tasks with priority and status. |
 | Movies | Search OMDb, maintain watch lists, rate watched films, write or AI-polish critiques, and request preference-aware recommendations. |
 | Business | Manage multiple legal businesses and client segments, prepare invoices, apply branding and signatures, record payments, and download PDFs. |
@@ -82,6 +83,7 @@ Authenticated routes:
 | `/dashboard` | Main dashboard. |
 | `/todos/*` | All tasks, today, and completed tasks. |
 | `/expenses/*` | Expenses, recurring commitments, coverage forecast, overview charts, bank connections, callback, and import inbox. |
+| `/net-worth` | Net-worth summary, asset/liability management, linked balances, and snapshot history. |
 | `/movies/*` | Discovery, want-to-watch, watched and rated, and AI suggestions. |
 | `/business/*` | Business overview, clients, and invoices. |
 | `/profile` | Profile and avatar editing. |

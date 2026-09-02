@@ -15,6 +15,7 @@ const BusinessHub = lazy(() => import('./pages/Business'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Banking = lazy(() => import('./pages/Banking'))
 const Legal = lazy(() => import('./pages/Legal'))
+const NetWorth = lazy(() => import('./pages/NetWorth'))
 
 function RouteFallback() {
   return <div className="min-h-32 animate-pulse rounded-xl bg-muted/50" aria-hidden="true" />
@@ -48,6 +49,7 @@ function App() {
             <Route path="/expenses/bank-accounts" element={<Banking />} />
             <Route path="/expenses/bank-accounts/callback" element={<Banking />} />
             <Route path="/expenses/import" element={<Banking />} />
+            <Route path="/net-worth" element={<NetWorth />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/movies/want-to-watch" element={<Movies />} />
             <Route path="/movies/watched" element={<Movies />} />

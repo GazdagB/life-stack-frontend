@@ -5,6 +5,7 @@ import { recurringTranslations } from "src/locales/recurring"
 import { movieTranslations } from "src/locales/movies"
 import { businessTranslations } from "src/locales/business"
 import { bankingTranslations } from "src/locales/banking"
+import { netWorthTranslations } from "src/locales/net-worth"
 
 export const supportedLanguages = ["en", "de", "hu"] as const
 export type AppLanguage = (typeof supportedLanguages)[number]
@@ -30,6 +31,7 @@ const baseResources = {
         spendingOverview: "Spending overview",
         bankAccounts: "Bank accounts",
         importInbox: "Import inbox",
+        netWorth: "Net worth",
         movies: "Movies",
         discover: "Discover",
         wantToWatch: "Want to watch",
@@ -153,6 +155,7 @@ const baseResources = {
         spendingOverview: "Ausgabenübersicht",
         bankAccounts: "Bankkonten",
         importInbox: "Import-Postfach",
+        netWorth: "Nettovermögen",
         movies: "Filme",
         discover: "Entdecken",
         wantToWatch: "Möchte ich sehen",
@@ -276,6 +279,7 @@ const baseResources = {
         spendingOverview: "Kiadási áttekintés",
         bankAccounts: "Bankszámlák",
         importInbox: "Importálási lista",
+        netWorth: "Nettó vagyon",
         movies: "Filmek",
         discover: "Felfedezés",
         wantToWatch: "Megnézendő",
@@ -384,9 +388,9 @@ const baseResources = {
 } as const
 
 const resources = {
-  en: { translation: baseResources.en.translation, core: coreTranslations.en, recurring: recurringTranslations.en, movies: movieTranslations.en, business: businessTranslations.en, banking: bankingTranslations.en },
-  de: { translation: baseResources.de.translation, core: coreTranslations.de, recurring: recurringTranslations.de, movies: movieTranslations.de, business: businessTranslations.de, banking: bankingTranslations.de },
-  hu: { translation: baseResources.hu.translation, core: coreTranslations.hu, recurring: recurringTranslations.hu, movies: movieTranslations.hu, business: businessTranslations.hu, banking: bankingTranslations.hu },
+  en: { translation: baseResources.en.translation, core: coreTranslations.en, recurring: recurringTranslations.en, movies: movieTranslations.en, business: businessTranslations.en, banking: bankingTranslations.en, netWorth: netWorthTranslations.en },
+  de: { translation: baseResources.de.translation, core: coreTranslations.de, recurring: recurringTranslations.de, movies: movieTranslations.de, business: businessTranslations.de, banking: bankingTranslations.de, netWorth: netWorthTranslations.de },
+  hu: { translation: baseResources.hu.translation, core: coreTranslations.hu, recurring: recurringTranslations.hu, movies: movieTranslations.hu, business: businessTranslations.hu, banking: bankingTranslations.hu, netWorth: netWorthTranslations.hu },
 } as const
 
 export function normalizeAppLanguage(language?: string | null): AppLanguage {
@@ -407,7 +411,7 @@ void i18n.use(initReactI18next).init({
   lng: initialLanguage,
   fallbackLng: "en",
   supportedLngs: supportedLanguages,
-  ns: ["translation", "core", "recurring", "movies", "business", "banking"],
+  ns: ["translation", "core", "recurring", "movies", "business", "banking", "netWorth"],
   defaultNS: "translation",
   load: "languageOnly",
   interpolation: { escapeValue: false },

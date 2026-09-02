@@ -164,6 +164,48 @@ export type BankTransactionPage = {
   has_more: boolean
 }
 
+export type NetWorthKind = "ASSET" | "LIABILITY"
+export type NetWorthCategory = "CASH" | "BANK" | "INVESTMENT" | "PROPERTY" | "VEHICLE" | "BUSINESS" | "LOAN" | "CREDIT_CARD" | "OTHER"
+
+export type NetWorthItemInput = {
+  name: string
+  kind: NetWorthKind
+  category: NetWorthCategory
+  current_value: string | number
+  currency: string
+  ownership_percent: string | number
+  linked_bank_account_id: number | null
+  notes: string | null
+  active: boolean
+}
+
+export type NetWorthItem = NetWorthItemInput & {
+  id: number
+  effective_value: string | number
+  account_name: string | null
+  bank_name: string | null
+  iban_last4: string | null
+  balance_updated_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type NetWorthSummary = {
+  currency: string
+  assets: string | number
+  liabilities: string | number
+  net_worth: string | number
+  item_count: number
+  categories: Array<{ category: NetWorthCategory; value: string | number }>
+}
+
+export type NetWorthHistoryPoint = {
+  recorded_on: string
+  assets: string | number
+  liabilities: string | number
+  net_worth: string | number
+}
+
 export type MovieListStatus = "WANT_TO_WATCH" | "WATCHED"
 
 export type ExternalMovieRating = {
@@ -577,6 +619,15 @@ export const api = {
       }),
     ignoreTransaction: (transactionId: number) =>
       apiRequest<{ id: number; status: string }>(`/banking/transactions/${transactionId}/ignore`, { method: "POST" }),
+  },
+  netWorth: {
+    items: () => apiRequest<NetWorthItem[]>("/net-worth/items"),
+    summary: (currency: string) => apiRequest<NetWorthSummary>(`/net-worth/summary?currency=${encodeURIComponent(currency)}`),
+    history: (currency: string, days = 365) => apiRequest<NetWorthHistoryPoint[]>(`/net-worth/history?currency=${encodeURIComponent(currency)}&days=${days}`),
+    create: (input: NetWorthItemInput) => apiRequest<NetWorthItem>("/net-worth/items", { method: "POST", body: JSON.stringify(input) }),
+    update: (id: number, input: NetWorthItemInput) => apiRequest<NetWorthItem>(`/net-worth/items/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+    delete: (id: number) => apiRequest<{ id: number; message: string }>(`/net-worth/items/${id}`, { method: "DELETE" }),
+    snapshot: () => apiRequest<{ recorded_on: string; snapshots: number }>("/net-worth/snapshots", { method: "POST" }),
   },
   movies: {
     search: (query: string, page = 1) =>

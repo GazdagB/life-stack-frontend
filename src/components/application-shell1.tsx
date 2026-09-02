@@ -23,6 +23,7 @@ import {
   Building2,
   FileText,
   Users,
+  Scale,
 } from "lucide-react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
 import { useTranslation } from "react-i18next"
@@ -115,6 +116,12 @@ const navigation: Array<{ title: string; items: NavItem[] }> = [
         ],
       },
       {
+        labelKey: "nav.netWorth",
+        href: "/net-worth",
+        icon: Scale,
+        exact: true,
+      },
+      {
         labelKey: "nav.movies",
         href: "/movies",
         icon: Clapperboard,
@@ -160,6 +167,7 @@ const pageNames: Record<string, [string, string, IconType]> = {
   "/expenses/bank-accounts": ["nav.expenses", "nav.bankAccounts", Landmark],
   "/expenses/bank-accounts/callback": ["nav.expenses", "nav.bankAccounts", Landmark],
   "/expenses/import": ["nav.expenses", "nav.importInbox", Download],
+  "/net-worth": ["nav.groups.life", "nav.netWorth", Scale],
   "/movies": ["nav.movies", "nav.discover", Search],
   "/movies/want-to-watch": ["nav.movies", "nav.wantToWatch", Bookmark],
   "/movies/watched": ["nav.movies", "nav.watchedRated", Star],
