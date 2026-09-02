@@ -196,25 +196,39 @@ function ConnectionStatus({ status }: { status: BankConnection["status"] }) {
 function TransactionInbox() {
   const { t, i18n } = useTranslation("banking")
   const [transactions, setTransactions] = React.useState<BankTransaction[]>([])
+  const [total, setTotal] = React.useState(0)
+  const [hasMore, setHasMore] = React.useState(false)
   const [categories, setCategories] = React.useState<Record<number, number>>({})
   const [workingId, setWorkingId] = React.useState<number | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false)
   const [error, setError] = React.useState("")
 
   React.useEffect(() => {
-    api.banking.transactions().then((items) => { setTransactions(items); setCategories(Object.fromEntries(items.map((item) => [item.id, item.suggested_category_id ?? 10]))) }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : t("loadError"))).finally(() => setIsLoading(false))
+    api.banking.transactions().then((page) => { setTransactions(page.items); setTotal(page.total); setHasMore(page.has_more); setCategories(Object.fromEntries(page.items.map((item) => [item.id, item.suggested_category_id ?? 10]))) }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : t("loadError"))).finally(() => setIsLoading(false))
   }, [t])
+
+  async function loadMore() {
+    setIsLoadingMore(true); setError("")
+    try {
+      const page = await api.banking.transactions("PENDING", transactions.length)
+      setTransactions((items) => [...items, ...page.items])
+      setCategories((current) => ({ ...current, ...Object.fromEntries(page.items.map((item) => [item.id, item.suggested_category_id ?? 10])) }))
+      setTotal(page.total); setHasMore(page.has_more)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : t("loadError")) }
+    finally { setIsLoadingMore(false) }
+  }
 
   async function importItem(transaction: BankTransaction) {
     setWorkingId(transaction.id); setError("")
-    try { await api.banking.importTransaction(transaction.id, categories[transaction.id] ?? 10); setTransactions((items) => items.filter((item) => item.id !== transaction.id)) }
+    try { await api.banking.importTransaction(transaction.id, categories[transaction.id] ?? 10); setTransactions((items) => items.filter((item) => item.id !== transaction.id)); setTotal((count) => Math.max(0, count - 1)) }
     catch (reason) { setError(reason instanceof Error ? reason.message : t("actionError")) }
     finally { setWorkingId(null) }
   }
 
   async function ignoreItem(transaction: BankTransaction) {
     setWorkingId(transaction.id); setError("")
-    try { await api.banking.ignoreTransaction(transaction.id); setTransactions((items) => items.filter((item) => item.id !== transaction.id)) }
+    try { await api.banking.ignoreTransaction(transaction.id); setTransactions((items) => items.filter((item) => item.id !== transaction.id)); setTotal((count) => Math.max(0, count - 1)) }
     catch (reason) { setError(reason instanceof Error ? reason.message : t("actionError")) }
     finally { setWorkingId(null) }
   }
@@ -225,9 +239,10 @@ function TransactionInbox() {
       <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground"><p className="flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0" />{t("importHelp")}</p></div>
       {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
       <Card>
-        <CardHeader><div className="flex items-center justify-between"><div><CardTitle>{t("pendingTitle")}</CardTitle><CardDescription>{t("pendingCount", { count: transactions.length })}</CardDescription></div><Download className="size-5 text-muted-foreground" /></div></CardHeader>
+        <CardHeader><div className="flex items-center justify-between"><div><CardTitle>{t("pendingTitle")}</CardTitle><CardDescription>{t("pendingCount", { count: total })}</CardDescription></div><Download className="size-5 text-muted-foreground" /></div></CardHeader>
         <CardContent className="divide-y p-0">
           {transactions.map((transaction) => <div key={transaction.id} className="space-y-3 p-4 sm:p-5"><div className="flex items-start gap-3"><div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", transaction.direction === "DEBIT" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>{transaction.direction === "DEBIT" ? <ArrowUpRight className="size-4" /> : <ArrowDownLeft className="size-4" />}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{transaction.merchant_name || t("unknownMerchant")}</p><Badge variant="outline">{t(transaction.direction === "DEBIT" ? "debit" : "credit")}</Badge><Badge variant="secondary">{t(transaction.booking_status === "BOOKED" ? "booked" : "pending")}</Badge></div><p className="mt-1 truncate text-xs text-muted-foreground">{transaction.booking_date} · {transaction.account_name || transaction.bank_name || t("account")}{transaction.iban_last4 ? ` •••• ${transaction.iban_last4}` : ""}{transaction.description ? ` · ${transaction.description}` : ""}</p></div><p className={cn("font-semibold tabular-nums", transaction.direction === "CREDIT" && "text-emerald-700")}>{transaction.direction === "DEBIT" ? "−" : "+"}{new Intl.NumberFormat(i18n.resolvedLanguage, { style: "currency", currency: transaction.currency }).format(Number(transaction.amount))}</p></div><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"><Button size="sm" variant="ghost" disabled={workingId === transaction.id} onClick={() => void ignoreItem(transaction)}>{t("ignore")}</Button>{transaction.direction === "DEBIT" && <><div className="w-full sm:w-56"><Select value={String(categories[transaction.id] ?? 10)} onValueChange={(value) => setCategories((current) => ({ ...current, [transaction.id]: Number(value) }))}><SelectTrigger aria-label={t("category")}><SelectValue /></SelectTrigger><SelectContent>{expenseCategoryOptions.map((option) => { const Icon = option.icon; return <SelectItem key={option.id} value={String(option.id)}><span className="flex items-center gap-2"><Icon className="size-4" />{t(option.nameKey, { ns: "core" })}</span></SelectItem> })}</SelectContent></Select></div><Button size="sm" disabled={workingId === transaction.id || transaction.booking_status !== "BOOKED"} onClick={() => void importItem(transaction)}>{workingId === transaction.id ? <LoaderCircle className="animate-spin" /> : <Download />}{workingId === transaction.id ? t("importing") : t("import")}</Button></>}</div></div>)}
+          {!isLoading && hasMore && <div className="flex justify-center p-4"><Button variant="outline" disabled={isLoadingMore} onClick={() => void loadMore()}>{isLoadingMore && <LoaderCircle className="animate-spin" />}{isLoadingMore ? t("loadingMore") : t("loadMore")}</Button></div>}
           {isLoading && <div className="flex items-center justify-center gap-2 p-12 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />{t("loadingBanks")}</div>}
           {!isLoading && transactions.length === 0 && <div className="flex flex-col items-center p-12 text-center"><Download className="mb-3 size-8 text-muted-foreground" /><p className="font-medium">{t("noTransactions")}</p><p className="mt-1 max-w-sm text-sm text-muted-foreground">{t("noTransactionsHelp")}</p></div>}
         </CardContent>

@@ -158,6 +158,12 @@ export type BankTransaction = {
   iban_last4: string | null
 }
 
+export type BankTransactionPage = {
+  items: BankTransaction[]
+  total: number
+  has_more: boolean
+}
+
 export type MovieListStatus = "WANT_TO_WATCH" | "WATCHED"
 
 export type ExternalMovieRating = {
@@ -557,8 +563,13 @@ export const api = {
       apiRequest<{ new_transactions: number }>(`/banking/connections/${connectionId}/sync`, { method: "POST" }),
     disconnect: (connectionId: number) =>
       apiRequest<{ id: number; status: string }>(`/banking/connections/${connectionId}`, { method: "DELETE" }),
-    transactions: (status: "PENDING" | "IMPORTED" | "IGNORED" = "PENDING") =>
-      apiRequest<BankTransaction[]>(`/banking/transactions?status=${status}`),
+    transactions: (
+      status: "PENDING" | "IMPORTED" | "IGNORED" = "PENDING",
+      offset = 0,
+      limit = 100,
+    ) => apiRequest<BankTransactionPage>(
+      `/banking/transactions?status=${status}&offset=${offset}&limit=${limit}`,
+    ),
     importTransaction: (transactionId: number, categoryId: number) =>
       apiRequest<Expense>(`/banking/transactions/${transactionId}/import`, {
         method: "POST",
