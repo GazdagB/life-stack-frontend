@@ -62,6 +62,10 @@ export default function TodoAssistantChat() {
     setMessage(""); setPendingMessage(content); setIsSending(true); setError(""); setNotice("")
     try {
       const next = await api.todos.sendWorkMessage(id, content, normalizeAppLanguage(i18n.resolvedLanguage))
+      const savedUserTurn = [...next.messages].reverse().find((item) => item.role === "USER")
+      if (!savedUserTurn || savedUserTurn.content !== content) {
+        throw new Error(t("work.sendNotSaved"))
+      }
       applyBundle(next)
     } catch (reason) {
       setMessage(content)
