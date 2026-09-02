@@ -1,14 +1,54 @@
 # Life Stack Frontend Roadmap
 
-> **Next product feature:** Socials — a private audience-growth dashboard across multiple social platforms.
+> **Next product feature:** AI Task Assistant — scan TODOs, explain what AI can help with, and safely generate reviewed artifacts such as letters and PDFs.
 >
-> Railway deployment remains the immediate release/setup task, but Socials is the next application feature to design and implement.
+> Socials remains planned after the AI Task Assistant foundation is stable.
 
 ## Status legend
 
 - [ ] Planned
 - [x] Implemented
 - Items are ordered by dependency inside each section.
+
+## Next: AI Task Assistant workspace
+
+### Task assessment experience
+
+- [ ] Add an **AI Assistant** view under Tasks with an explicit “Assess my TODOs” action.
+- [ ] Display `Fully AI-actionable`, `AI can help`, and `Human action required` as distinct icon-and-text states that do not rely on colour alone.
+- [ ] Show confidence, a concise explanation, missing information, AI-capable steps, and human-required steps on every assessed task.
+- [ ] Add filters for assessment state, stale assessment, due date, and supported action type.
+- [ ] Make changed TODOs visibly stale until reassessed rather than silently showing an outdated decision.
+- [ ] Let users correct an assessment and explain why without automatically training on private text.
+- [ ] Provide empty, loading, partial-provider-failure, quota, and unavailable states.
+
+### Safe action and review flow
+
+- [ ] Show only actions implemented by Life Stack, such as draft letter, improve text, create checklist, translate, summarise, or generate PDF.
+- [ ] Require a deliberate user click before preparing any AI action.
+- [ ] Show an editable draft and required-information checklist before PDF generation.
+- [ ] Provide regenerate, compare, accept, download, delete, and cancel controls.
+- [ ] Clearly separate completed AI work from remaining human work.
+- [ ] Never show an action as completed merely because a draft was generated.
+- [ ] Never provide automatic send, signature, payment, cancellation submission, or account-login controls without a separately reviewed integration.
+
+### Cancellation-letter MVP
+
+- [ ] Add a guided German cancellation-letter flyout for tasks such as “Verdi subscription cancellation letter.”
+- [ ] Collect sender and recipient addresses, membership/contract number, requested cancellation date, and optional notes.
+- [ ] Preview the generated `Kündigungsschreiben` as editable text before creating the PDF.
+- [ ] Show a printable PDF preview with address window layout, subject, body, place/date, and blank handwritten-signature area.
+- [ ] Show the remaining human checklist: verify, print, sign, retain a copy, and send.
+- [ ] Allow the accepted PDF and draft to be downloaded or deleted from the task.
+
+### Accessibility, localization, and trust
+
+- [ ] Add every assistant label, explanation, warning, and document-flow message in English, German, and Hungarian.
+- [ ] Keep formal-letter content language separate from the application-interface language.
+- [ ] Make assessment cards, forms, draft comparison, and PDF preview keyboard accessible.
+- [ ] Explain which TODO fields are sent to the AI provider and that model storage is disabled.
+- [ ] Never render raw model output as HTML; use typed structured fields and escaped text.
+- [ ] Add responsive desktop, tablet, and mobile layouts plus clear print/download feedback.
 
 ## Next: Socials workspace
 
