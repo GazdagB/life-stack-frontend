@@ -55,11 +55,9 @@ export default function TodoAssistantChat() {
     chatEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
   }, [bundle?.messages.length, pendingMessage])
 
-  async function sendMessage(event: React.FormEvent) {
-    event.preventDefault()
-    const content = message.trim()
-    if (!content || isSending) return
-    setMessage(""); setPendingMessage(content); setIsSending(true); setError(""); setNotice("")
+  async function submitContent(content: string): Promise<boolean> {
+    if (!content || isSending) return false
+    setPendingMessage(content); setIsSending(true); setError(""); setNotice("")
     try {
       const next = await api.todos.sendWorkMessage(id, content, normalizeAppLanguage(i18n.resolvedLanguage))
       const savedUserTurn = [...next.messages].reverse().find((item) => item.role === "USER")
@@ -67,12 +65,22 @@ export default function TodoAssistantChat() {
         throw new Error(t("work.sendNotSaved"))
       }
       applyBundle(next)
+      return true
     } catch (reason) {
-      setMessage(content)
       setError(reason instanceof Error ? reason.message : t("work.sendError"))
+      return false
     } finally {
       setPendingMessage(""); setIsSending(false)
     }
+  }
+
+  async function sendMessage(event: React.FormEvent) {
+    event.preventDefault()
+    const content = message.trim()
+    if (!content || isSending) return
+    setMessage("")
+    const sent = await submitContent(content)
+    if (!sent) setMessage(content)
   }
 
   async function saveDraft() {
@@ -162,17 +170,19 @@ export default function TodoAssistantChat() {
                 <div ref={chatEnd} />
               </div>
 
-              {!!bundle.session.questions.length && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-medium text-amber-900"><Info className="size-4" />{t("work.questions")}</p>
-                  <ul className="space-y-1.5 text-sm text-amber-900/80">{bundle.session.questions.map((question) => <li key={question} className="flex gap-2"><span>•</span><span>{question}</span></li>)}</ul>
-                </div>
+              {bundle.session.questions.length > 0 ? (
+                <QuestionAnswerForm
+                  key={bundle.session.questions.join("|")}
+                  questions={bundle.session.questions}
+                  isSending={isSending}
+                  onSubmit={submitContent}
+                />
+              ) : (
+                <form onSubmit={sendMessage} className="flex items-end gap-2 border-t pt-4">
+                  <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("work.messagePlaceholder")} maxLength={6000} rows={3} disabled={isSending} className="min-h-20 resize-y" />
+                  <Button type="submit" size="icon" disabled={!message.trim() || isSending} aria-label={t("work.send")} className="mb-0.5 shrink-0"><Send /></Button>
+                </form>
               )}
-
-              <form onSubmit={sendMessage} className="flex items-end gap-2 border-t pt-4">
-                <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("work.messagePlaceholder")} maxLength={4000} rows={3} disabled={isSending} className="min-h-20 resize-y" />
-                <Button type="submit" size="icon" disabled={!message.trim() || isSending} aria-label={t("work.send")} className="mb-0.5 shrink-0"><Send /></Button>
-              </form>
             </CardContent>
           </Card>
 
@@ -201,6 +211,57 @@ export default function TodoAssistantChat() {
 function ChatMessage({ role, content }: { role: "USER" | "ASSISTANT"; content: string }) {
   const isUser = role === "USER"
   return <div className={cn("flex gap-2", isUser && "justify-end")}><div className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", isUser ? "order-2 bg-foreground text-background" : "bg-violet-100 text-violet-700")}>{isUser ? <UserRound className="size-3.5" /> : <Bot className="size-3.5" />}</div><div className={cn("max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed", isUser ? "bg-foreground text-background" : "bg-muted")}>{content}</div></div>
+}
+
+function QuestionAnswerForm({
+  questions,
+  isSending,
+  onSubmit,
+}: {
+  questions: string[]
+  isSending: boolean
+  onSubmit: (content: string) => Promise<boolean>
+}) {
+  const { t } = useTranslation("todoAssistant")
+  const [answers, setAnswers] = React.useState<Record<number, string>>({})
+  const [additionalContext, setAdditionalContext] = React.useState("")
+  const allAnswered = questions.every((_, index) => answers[index]?.trim())
+
+  async function submitAnswers(event: React.FormEvent) {
+    event.preventDefault()
+    if (!allAnswered || isSending) return
+    const content = questions.map((question, index) => (
+      `Q${index + 1}: ${question.slice(0, 300)}\nA${index + 1}: ${answers[index].trim()}`
+    )).join("\n\n") + (additionalContext.trim() ? `\n\nAdditional context: ${additionalContext.trim()}` : "")
+    await onSubmit(content)
+  }
+
+  return (
+    <form onSubmit={submitAnswers} className="space-y-4 border-t pt-4">
+      <p className="flex items-center gap-2 text-sm font-medium"><Info className="size-4 text-amber-600" />{t("work.questions")}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {questions.map((question, index) => (
+          <div key={`${index}-${question}`} className="space-y-2 rounded-xl border bg-muted/30 p-4">
+            <label htmlFor={`todo-ai-answer-${index}`} className="block text-sm font-medium leading-relaxed"><span className="mr-2 text-xs font-semibold text-muted-foreground">{index + 1}.</span>{question}</label>
+            <Input
+              id={`todo-ai-answer-${index}`}
+              value={answers[index] ?? ""}
+              onChange={(event) => setAnswers((current) => ({ ...current, [index]: event.target.value }))}
+              placeholder={t("work.answerPlaceholder")}
+              maxLength={300}
+              disabled={isSending}
+              required
+            />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="todo-ai-additional-context" className="text-sm font-medium">{t("work.additionalContext")}</label>
+        <Textarea id="todo-ai-additional-context" value={additionalContext} onChange={(event) => setAdditionalContext(event.target.value)} placeholder={t("work.additionalContextPlaceholder")} maxLength={500} rows={2} disabled={isSending} />
+      </div>
+      <div className="flex justify-end"><Button type="submit" disabled={!allAnswered || isSending}>{isSending ? <LoaderCircle className="animate-spin" /> : <Send />}{isSending ? t("work.sending") : t("work.sendAnswers")}</Button></div>
+    </form>
+  )
 }
 
 function ContextList({ title, values, icon: Icon, className }: { title: string; values: string[]; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; className: string }) {
