@@ -1,6 +1,6 @@
 # Life Stack Frontend Roadmap
 
-> **Next product feature:** AI Task Assistant — scan TODOs, explain what AI can help with, and safely generate reviewed artifacts such as letters and PDFs.
+> **Current priority:** harden the production app and finish the AI Task Assistant lifecycle around the working assessment, chat, draft, and PDF foundation.
 >
 > Socials remains planned after the AI Task Assistant foundation is stable.
 
@@ -47,7 +47,7 @@
 ### Accessibility, localization, and trust
 
 - [x] Add every implemented assessment label, explanation, and warning in English, German, and Hungarian.
-- [ ] Keep formal-letter content language separate from the application-interface language.
+- [x] Keep formal-letter content language separate from the application-interface language.
 - [ ] Make assessment cards, forms, draft comparison, and PDF preview keyboard accessible.
 - [x] Explain which TODO fields are sent to the AI provider and that model storage is disabled.
 - [x] Never render raw model output as HTML; use typed structured fields and escaped text.
@@ -117,7 +117,7 @@
 - [x] Add Railway health-check and restart configuration.
 - [x] Add public privacy and terms pages.
 - [ ] Replace the legal operator placeholder and add a public contact email.
-- [ ] Create the Railway project, frontend, private backend, and PostgreSQL services in one EU region.
+- [ ] Move the Railway frontend, private backend, and PostgreSQL services from US West into one EU region.
 - [x] Configure build-time frontend variables and private `BACKEND_UPSTREAM`.
 - [x] Attach `lifeos.gazdagbalazs.com` and verify Railway-managed TLS.
 - [ ] Test SPA deep links, secure cookies, API proxying, mobile navigation, and legal pages on the production hostname.
@@ -150,10 +150,10 @@
 
 ## Private access control
 
-- [ ] Add clear login messaging for accounts rejected by the private email allowlist without revealing whether an email is registered.
-- [ ] Add an owner-only settings view that shows the configured allowed email addresses and explains that changes are made through protected server configuration.
-- [ ] Prevent profile email changes to addresses outside the backend-enforced allowlist.
-- [ ] Add English, German, and Hungarian copy for allowlist-related states and errors.
+- [x] Add clear login messaging for accounts rejected by the private email allowlist without revealing whether an email is registered.
+- [x] Add an owner-only settings view that shows the configured allowed email addresses and explains that changes are made through protected server configuration.
+- [x] Prevent profile email changes to addresses outside the backend-enforced allowlist.
+- [x] Add English, German, and Hungarian copy for allowlist-related states and errors.
 
 ## Business and invoicing
 

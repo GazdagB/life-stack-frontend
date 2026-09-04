@@ -69,6 +69,14 @@ const baseResources = {
           de: { name: "Deutsch", description: "German" },
           hu: { name: "Magyar", description: "Hungarian" },
         },
+        privateAccess: {
+          title: "Private access",
+          description: "Life Stack only accepts accounts approved by the server allowlist.",
+          authorized: "{{email}} is authorized",
+          allowedAccounts: "Allowed accounts",
+          managedHelp: "The owner can view this list here. Add or remove people through the protected ALLOWED_USER_EMAILS Railway variable.",
+          developmentHelp: "The allowlist is not enforced in this local development environment.",
+        },
         security: {
           title: "Security",
           description: "Manage your password and the devices signed in to your account.",
@@ -194,6 +202,14 @@ const baseResources = {
           de: { name: "Deutsch", description: "Deutsch" },
           hu: { name: "Magyar", description: "Ungarisch" },
         },
+        privateAccess: {
+          title: "Privater Zugriff",
+          description: "Life Stack akzeptiert nur Konten, die in der Server-Zugriffsliste freigegeben sind.",
+          authorized: "{{email}} ist zugelassen",
+          allowedAccounts: "Zugelassene Konten",
+          managedHelp: "Der Eigentümer kann diese Liste hier einsehen. Personen werden über die geschützte Railway-Variable ALLOWED_USER_EMAILS hinzugefügt oder entfernt.",
+          developmentHelp: "In dieser lokalen Entwicklungsumgebung wird die Zugriffsliste nicht erzwungen.",
+        },
         security: {
           title: "Sicherheit",
           description: "Verwalte dein Passwort und die angemeldeten Geräte.",
@@ -318,6 +334,14 @@ const baseResources = {
           en: { name: "English", description: "Angol" },
           de: { name: "Deutsch", description: "Német" },
           hu: { name: "Magyar", description: "Magyar" },
+        },
+        privateAccess: {
+          title: "Privát hozzáférés",
+          description: "A Life Stack csak a szerver engedélyezési listáján szereplő fiókokat fogadja el.",
+          authorized: "{{email}} engedélyezve van",
+          allowedAccounts: "Engedélyezett fiókok",
+          managedHelp: "A tulajdonos itt láthatja a listát. Személyeket a védett ALLOWED_USER_EMAILS Railway-változóval adhatsz hozzá vagy távolíthatsz el.",
+          developmentHelp: "Ebben a helyi fejlesztési környezetben az engedélyezési lista nincs kikényszerítve.",
         },
         security: {
           title: "Biztonság",

@@ -1,11 +1,11 @@
 import * as React from "react"
-import { Check, Globe2, LoaderCircle, Languages, Settings2 } from "lucide-react"
+import { Check, Globe2, LoaderCircle, Languages, MailCheck, Settings2, ShieldCheck } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "src/components/page-header"
 import { SecuritySettings } from "src/components/security-settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
-import { api } from "src/lib/api"
+import { api, type PrivateAccessPolicy } from "src/lib/api"
 import { useAuth } from "src/lib/auth"
 import {
   changeAppLanguage,
@@ -26,7 +26,16 @@ export default function Settings() {
   const { user, updateUser } = useAuth()
   const [savingLanguage, setSavingLanguage] = React.useState<AppLanguage | null>(null)
   const [message, setMessage] = React.useState<"saved" | "error" | null>(null)
+  const [accessPolicy, setAccessPolicy] = React.useState<PrivateAccessPolicy | null>(null)
   const activeLanguage = normalizeAppLanguage(user?.preferred_language)
+
+  React.useEffect(() => {
+    let active = true
+    api.settings.getAccessPolicy()
+      .then((policy) => { if (active) setAccessPolicy(policy) })
+      .catch(() => { if (active) setAccessPolicy(null) })
+    return () => { active = false }
+  }, [])
 
   async function selectLanguage(language: AppLanguage) {
     if (language === activeLanguage || savingLanguage) return
@@ -104,6 +113,29 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {accessPolicy && (
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><ShieldCheck className="size-5" /></div>
+              <div className="space-y-1"><CardTitle>{t("settings.privateAccess.title")}</CardTitle><CardDescription>{t("settings.privateAccess.description")}</CardDescription></div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"><MailCheck className="size-4" /><span>{t("settings.privateAccess.authorized", { email: user?.email })}</span></div>
+            {accessPolicy.is_owner && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t("settings.privateAccess.allowedAccounts")}</p>
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {accessPolicy.allowed_emails.map((email) => <li key={email} className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-sm"><Check className="size-4 text-emerald-600" /><span className="truncate">{email}</span></li>)}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs leading-relaxed text-muted-foreground">{t(accessPolicy.enforced ? "settings.privateAccess.managedHelp" : "settings.privateAccess.developmentHelp")}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <SecuritySettings />
     </>

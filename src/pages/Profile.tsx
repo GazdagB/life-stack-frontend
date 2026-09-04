@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/c
 import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 import { Textarea } from "src/components/ui/textarea"
-import { api } from "src/lib/api"
+import { api, ApiError } from "src/lib/api"
 import { useAuth } from "src/lib/auth"
 
 type ProfileDraft = {
@@ -54,7 +54,7 @@ export default function Profile() {
       setDraft(draftFromUser(updated))
       setSuccess(t("profile.detailsSaved"))
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t("profile.saveError"))
+      setError(reason instanceof ApiError && reason.status === 403 ? t("profile.emailRestricted") : reason instanceof Error ? reason.message : t("profile.saveError"))
     } finally {
       setIsSaving(false)
     }
@@ -157,7 +157,7 @@ export default function Profile() {
                 <div className="space-y-2"><Label htmlFor="profile-display-name">{t("profile.displayName")}</Label><Input id="profile-display-name" value={draft.display_name} maxLength={80} onChange={(event) => setDraft({ ...draft, display_name: event.target.value })} placeholder={t("profile.displayNamePlaceholder")} autoComplete="name" /></div>
                 <div className="space-y-2"><Label htmlFor="profile-username">{t("profile.username")}</Label><Input id="profile-username" value={draft.username} minLength={3} maxLength={20} onChange={(event) => setDraft({ ...draft, username: event.target.value })} autoComplete="username" required /></div>
               </div>
-              <div className="space-y-2"><Label htmlFor="profile-email">{t("profile.email")}</Label><Input id="profile-email" type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} autoComplete="email" required /></div>
+              <div className="space-y-2"><Label htmlFor="profile-email">{t("profile.email")}</Label><Input id="profile-email" type="email" value={draft.email} readOnly aria-readonly="true" autoComplete="email" className="bg-muted/50" /><p className="text-xs text-muted-foreground">{t("profile.emailManaged")}</p></div>
               <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="profile-bio">{t("profile.bio")}</Label><span className="text-xs text-muted-foreground">{draft.bio.length}/280</span></div><Textarea id="profile-bio" value={draft.bio} maxLength={280} onChange={(event) => setDraft({ ...draft, bio: event.target.value })} placeholder={t("profile.bioPlaceholder")} /></div>
               <div className="flex justify-end border-t pt-5"><Button type="submit" disabled={isSaving}><Save />{isSaving ? t("profile.saving") : t("profile.save")}</Button></div>
             </form>

@@ -26,6 +26,12 @@ export type AuthSession = {
   is_recognized_device: boolean
 }
 
+export type PrivateAccessPolicy = {
+  enforced: boolean
+  is_owner: boolean
+  allowed_emails: string[]
+}
+
 export type TodoStatus = "not_started" | "in_progress" | "completed" | "canceled"
 export type TodoPriority = "P1" | "P2" | "P3" | "P4" | "P5"
 
@@ -582,6 +588,7 @@ export const api = {
       apiRequest<UserProfile>("/auth/profile/avatar", { method: "DELETE" }),
   },
   settings: {
+    getAccessPolicy: () => apiRequest<PrivateAccessPolicy>("/auth/access-policy"),
     updateLanguage: (preferredLanguage: AppLanguage) =>
       apiRequest<UserProfile>("/auth/settings", {
         method: "PUT",
