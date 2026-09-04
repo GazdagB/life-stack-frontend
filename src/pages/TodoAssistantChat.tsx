@@ -1,6 +1,6 @@
 import * as React from "react"
 import {
-  ArrowLeft, Bot, Check, Clipboard, FileDown, Info, LoaderCircle,
+  ArrowLeft, Bot, Check, ChevronDown, Clipboard, FileDown, Info, LoaderCircle,
   Save, Send, ShieldCheck, Sparkles, UserRound,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -9,7 +9,8 @@ import { Link, useParams } from "react-router"
 import { PageHeader } from "src/components/page-header"
 import { Badge } from "src/components/ui/badge"
 import { Button } from "src/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "src/components/ui/collapsible"
 import { Input } from "src/components/ui/input"
 import { Textarea } from "src/components/ui/textarea"
 import { normalizeAppLanguage } from "src/i18n"
@@ -24,7 +25,6 @@ export default function TodoAssistantChat() {
   const { t, i18n } = useTranslation("todoAssistant")
   const [bundle, setBundle] = React.useState<TodoAIWorkBundle | null>(null)
   const [message, setMessage] = React.useState("")
-  const [pendingMessage, setPendingMessage] = React.useState("")
   const [draftTitle, setDraftTitle] = React.useState("")
   const [draftContent, setDraftContent] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(true)
@@ -33,7 +33,6 @@ export default function TodoAssistantChat() {
   const [isDownloading, setIsDownloading] = React.useState(false)
   const [notice, setNotice] = React.useState("")
   const [error, setError] = React.useState("")
-  const chatEnd = React.useRef<HTMLDivElement>(null)
 
   function applyBundle(next: TodoAIWorkBundle) {
     setBundle(next)
@@ -51,13 +50,9 @@ export default function TodoAssistantChat() {
     return () => { active = false }
   }, [hasValidId, id, i18n.resolvedLanguage, t])
 
-  React.useEffect(() => {
-    chatEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-  }, [bundle?.messages.length, pendingMessage])
-
   async function submitContent(content: string): Promise<boolean> {
     if (!content || isSending) return false
-    setPendingMessage(content); setIsSending(true); setError(""); setNotice("")
+    setIsSending(true); setError(""); setNotice("")
     try {
       const next = await api.todos.sendWorkMessage(id, content, normalizeAppLanguage(i18n.resolvedLanguage))
       const savedUserTurn = [...next.messages].reverse().find((item) => item.role === "USER")
@@ -70,7 +65,7 @@ export default function TodoAssistantChat() {
       setError(reason instanceof Error ? reason.message : t("work.sendError"))
       return false
     } finally {
-      setPendingMessage(""); setIsSending(false)
+      setIsSending(false)
     }
   }
 
@@ -147,28 +142,45 @@ export default function TodoAssistantChat() {
 
       <div className="grid items-start gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
         <div className="space-y-4 xl:sticky xl:top-4">
-          <Card size="sm">
-            <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-violet-600" />{t("work.preloaded")}</CardTitle><CardDescription>{t("work.preloadedHelp")}</CardDescription></CardHeader>
-            <CardContent className="space-y-4">
-              {bundle.todo.description && <p className="rounded-lg bg-muted/60 p-3 leading-relaxed">{bundle.todo.description}</p>}
-              <ContextList title={t("work.aiPart")} values={bundle.assessment.ai_steps} icon={Sparkles} className="text-violet-600" />
-              <ContextList title={t("work.yourPart")} values={bundle.assessment.human_steps} icon={UserRound} className="text-blue-600" />
-            </CardContent>
-          </Card>
+          <Collapsible className="group/context">
+            <Card size="sm">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-violet-600" />{t("work.preloaded")}</CardTitle>
+                  <CollapsibleTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={t("details")}><ChevronDown className="transition-transform group-data-[state=open]/context:rotate-180" /></Button></CollapsibleTrigger>
+                </div>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-4 border-t pt-4">
+                  {bundle.todo.description && <p className="rounded-lg bg-muted/60 p-3 text-sm leading-relaxed">{bundle.todo.description}</p>}
+                  <ContextList title={t("work.aiPart")} values={bundle.assessment.ai_steps} icon={Sparkles} className="text-violet-600" />
+                  <ContextList title={t("work.yourPart")} values={bundle.assessment.human_steps} icon={UserRound} className="text-blue-600" />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </div>
 
         <div className="min-w-0 space-y-5">
-          <Card className="min-h-[32rem]">
+          <Card>
             <CardHeader className="border-b">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><CardTitle>{t("work.chatTitle")}</CardTitle><CardDescription>{t("work.chatHelp")}</CardDescription></div><Badge variant="secondary">{t(`work.phases.${bundle.session.phase}`)}</Badge></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle>{t("work.chatTitle")}</CardTitle><Badge variant="secondary">{t(`work.phases.${bundle.session.phase}`)}</Badge></div>
             </CardHeader>
-            <CardContent className="flex min-h-[26rem] flex-col gap-4">
-              <div className="flex-1 space-y-4 overflow-y-auto py-1" aria-live="polite">
-                {bundle.messages.map((item) => <ChatMessage key={item.id} role={item.role} content={item.content} />)}
-                {pendingMessage && <ChatMessage role="USER" content={pendingMessage} />}
-                {isSending && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Bot className="size-4" /><LoaderCircle className="size-4 animate-spin" />{t("work.sending")}</div>}
-                <div ref={chatEnd} />
-              </div>
+            <CardContent className="flex flex-col gap-4">
+              {bundle.messages.length > 0 && (
+                <Collapsible className="group/history rounded-lg border bg-muted/20">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <span className="text-sm font-medium">{t("work.history", { count: bundle.messages.length })}</span>
+                    <CollapsibleTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={t("work.history", { count: bundle.messages.length })}><ChevronDown className="transition-transform group-data-[state=open]/history:rotate-180" /></Button></CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent>
+                    <div className="max-h-80 space-y-4 overflow-y-auto border-t p-3" aria-live="polite">
+                      {bundle.messages.map((item) => <ChatMessage key={item.id} role={item.role} content={item.content} />)}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+              {isSending && <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />{t("work.sending")}</div>}
 
               {bundle.session.questions.length > 0 ? (
                 <QuestionAnswerForm
@@ -187,7 +199,7 @@ export default function TodoAssistantChat() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>{t("work.deliverable")}</CardTitle><CardDescription>{t("work.draftHelp")}</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{t("work.deliverable")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {bundle.session.deliverable_content ? (
                 <>
